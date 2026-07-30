@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { CalendarDays, Home, LogIn, Menu, Shield, UserRound, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -15,7 +15,7 @@ export default function Layout() {
     <div className="mist mist-a"/><div className="mist mist-b"/>
     <button className="nav-toggle" onClick={() => setOpen(v => !v)} aria-label="Toggle navigation">{open ? <X/> : <Menu/>}</button>
     <aside className={`shrine-nav ${open ? 'open' : ''}`}>
-      <div className="nav-crest"><span>虚紗</span><small>HOLLOW VEIL</small></div>
+      <Link className="nav-crest" to="/" onClick={() => setOpen(false)} aria-label="Return to the Hollow Veil landing page"><span>虚紗</span><small>HOLLOW VEIL</small></Link>
       <nav>{links.map(([to,label,Icon]) => <NavLink key={to} to={to} onClick={() => setOpen(false)}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
       <div className="account-card">
         {me.authenticated && me.user ? <>

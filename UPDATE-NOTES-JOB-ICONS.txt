@@ -1,0 +1,12 @@
+Hollow Veil — Veilbound Roster / Job Icon Rebuild
+
+- Rebuilt roster cards around Current Calling.
+- Displays the Lodestone class/job icon at 46px on desktop and 38px on mobile.
+- Resolves class/job names from Lodestone icon IDs, job codes, tooltip text, alt text, and CSS background-image URLs.
+- Adds role labels and restrained role-based ambient glows.
+- Uses a fixed Hollow Veil rank hierarchy for rank filtering and sorting.
+- Cache payload version increased so older incomplete roster cache records are ignored.
+- Portraits remain zoomed out and the old red portrait badge is not used.
+- Responsive one-column and mobile layouts included.
+
+Deployment note: Click “Sync roster” once after deployment to populate the new cache format.

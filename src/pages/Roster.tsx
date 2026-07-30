@@ -49,7 +49,7 @@ export default function Roster(){
         <p className="member-world">{m.world||'World hidden in the mist'}</p>
         <div className="member-stat-grid">
           <div><span><Shield size={14}/>FC Rank</span><strong>{m.rank}</strong></div>
-          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{m.jobIcon&&<img src={m.jobIcon} alt=""/>}{m.job||'Not shown'}</strong></div>
+          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{m.jobIcon&&<img src={m.jobIcon} alt={`${m.job||'Current job'} icon`}/>}<span>{m.job||'Job unavailable'}</span></strong></div>
           <div><span>Level</span><strong className="level-value">{m.level??'—'}</strong></div>
         </div>
       </div>

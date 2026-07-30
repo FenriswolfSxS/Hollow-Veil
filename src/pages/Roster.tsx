@@ -44,7 +44,7 @@ export default function Roster(){
 
     {status.warning&&<div className="roster-warning">{status.warning}{members.length?' The most recently saved roster is shown below.':''}</div>}
     {loading?<div className="loading-veil">Listening for names in the mist…</div>:<div className="roster-grid expanded-roster">{shown.map(m=><article className="member-card expanded-card" key={m.id}>
-      <div className="portrait-wrap"><img src={m.portrait} alt={m.name} loading="lazy"/><span className="rank-rune">{m.rank?.[0]||'•'}</span></div>
+      <div className="portrait-wrap"><img src={m.portrait} alt={m.name} loading="lazy"/></div>
       <div className="member-details"><div className="member-title"><h2>{m.name}</h2><a href={m.profileUrl} target="_blank" rel="noreferrer" aria-label={`Open ${m.name} on Lodestone`}><ExternalLink size={18}/></a></div>
         <p className="member-world">{m.world||'World hidden in the mist'}</p>
         <div className="member-stat-grid">

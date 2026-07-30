@@ -16,16 +16,20 @@ export default function Roster(){
   const ranks=useMemo(()=>[...new Set(members.map(m=>m.rank).filter(Boolean))], [members]);
   const jobs=useMemo(()=>[...new Set(members.map(m=>m.job).filter((value):value is string=>Boolean(value)))].sort(),[members]);
   const rankOrder=useMemo(()=>new Map(ranks.map((value,index)=>[value,index])),[ranks]);
-  const shown=useMemo(()=>members.filter(m=>{
+  const shown=useMemo(()=>{
+    const filtered=[...members].filter(m=>{
     const needle=q.trim().toLowerCase();
     const matchesText=!needle||[m.name,m.rank,m.world,m.job,m.level?.toString(),m.grandCompany].filter(Boolean).join(' ').toLowerCase().includes(needle);
-    return matchesText&&(rank==='All ranks'||m.rank===rank)&&(job==='All jobs'||m.job===job);
-  }).sort((a,b)=>{
-    if(sort==='name')return a.name.localeCompare(b.name);
-    if(sort==='level')return (b.level||0)-(a.level||0)||a.name.localeCompare(b.name);
-    if(sort==='job')return (a.job||'').localeCompare(b.job||'')||a.name.localeCompare(b.name);
-    return (rankOrder.get(a.rank)??999)-(rankOrder.get(b.rank)??999)||a.name.localeCompare(b.name);
-  }),[members,q,rank,job,sort,rankOrder]);
+      return matchesText&&(rank==='All ranks'||m.rank===rank)&&(job==='All jobs'||m.job===job);
+    });
+    const collator=new Intl.Collator(undefined,{sensitivity:'base',numeric:true});
+    return filtered.sort((a,b)=>{
+      if(sort==='name')return collator.compare(a.name,b.name);
+      if(sort==='level')return (b.level??-1)-(a.level??-1)||collator.compare(a.name,b.name);
+      if(sort==='job')return collator.compare(a.job||'ZZZ',b.job||'ZZZ')||collator.compare(a.name,b.name);
+      return (rankOrder.get(a.rank)??999)-(rankOrder.get(b.rank)??999)||collator.compare(a.name,b.name);
+    });
+  },[members,q,rank,job,sort,rankOrder]);
   const updated=status.updatedAt?new Date(status.updatedAt).toLocaleString():null;
 
   return <section className="page roster-page">

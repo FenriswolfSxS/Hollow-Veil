@@ -49,21 +49,40 @@ function findPortrait(block:string){
   return '';
 }
 
+const JOB_NAMES=[
+  'Paladin','Warrior','Dark Knight','Gunbreaker','White Mage','Scholar','Astrologian','Sage',
+  'Monk','Dragoon','Ninja','Samurai','Reaper','Viper','Bard','Machinist','Dancer',
+  'Black Mage','Summoner','Red Mage','Pictomancer','Blue Mage',
+  'Gladiator','Marauder','Conjurer','Arcanist','Pugilist','Lancer','Rogue','Archer','Thaumaturge',
+  'Carpenter','Blacksmith','Armorer','Goldsmith','Leatherworker','Weaver','Alchemist','Culinarian',
+  'Miner','Botanist','Fisher'
+];
+
+function cleanJobLabel(value:string){
+  const cleaned=decode(value).replace(/^Class\s*\/\s*Job\s*[:\-]?\s*/i,'').replace(/\s+Lv\.?\s*\d{1,3}.*$/i,'').trim();
+  return JOB_NAMES.find(name=>new RegExp(`^${name.replace(' ','\\s+')}$`,'i').test(cleaned))||'';
+}
+
 function findJob(block:string){
-  const classBlock=firstClassBlock(block,'entry__freecompany__fc-member__class')
-    ||firstClassBlock(block,'entry__freecompany__class')
-    ||block;
-  const images=classBlock.match(/<img\b[^>]*>/gi)||[];
+  const images=block.match(/<img\b[^>]*>/gi)||[];
   for(const tag of images){
     const source=getAttr(tag,'data-src')||getAttr(tag,'src');
-    const label=getAttr(tag,'title')||getAttr(tag,'alt')||getAttr(tag,'data-tooltip');
-    if(label&&!/character|portrait|face/i.test(label)){
-      return {job:label.replace(/^Class\/Job\s*[:\-]?\s*/i,''),jobIcon:absoluteUrl(source)};
+    if(/img2\.finalfantasyxiv\.com\/f\//i.test(source))continue;
+    const labels=[getAttr(tag,'title'),getAttr(tag,'alt'),getAttr(tag,'data-tooltip'),getAttr(tag,'aria-label')];
+    for(const label of labels){
+      const job=cleanJobLabel(label);
+      if(job)return {job,jobIcon:absoluteUrl(source)};
     }
   }
-  const text=decode(classBlock);
-  const withoutLevel=text.replace(/\b(?:Lv\.?\s*)?\d{1,3}\b/gi,'').trim();
-  return {job:withoutLevel||undefined,jobIcon:undefined};
+
+  const attributeText=[...block.matchAll(/(?:title|alt|data-tooltip|aria-label)=["']([^"']+)["']/gi)].map(match=>decode(match[1]));
+  for(const label of attributeText){const job=cleanJobLabel(label);if(job)return {job,jobIcon:undefined};}
+
+  const plain=decode(block);
+  for(const name of JOB_NAMES){
+    if(new RegExp(`\\b${name.replace(' ','\\s+')}\\b`,'i').test(plain))return {job:name,jobIcon:undefined};
+  }
+  return {job:undefined,jobIcon:undefined};
 }
 
 function findLevel(block:string){
@@ -140,7 +159,11 @@ async function saveCache(env:Env,members:Member[],updatedAt:number){try{await en
 export const onRequestGet:PagesFunction<Env>=async({request,env})=>{
   const force=new URL(request.url).searchParams.get('refresh')==='1';
   const cached=await readCache(env); const age=cached?Date.now()-cached.updated_at:Infinity;
-  if(!force&&cached&&age<CACHE_TTL)return json({members:JSON.parse(cached.payload),cached:true,updatedAt:cached.updated_at});
+  if(!force&&cached&&age<CACHE_TTL){
+    const saved=JSON.parse(cached.payload) as Member[];
+    const complete=saved.length>0&&saved.some(member=>Boolean(member.job));
+    if(complete)return json({members:saved,cached:true,updatedAt:cached.updated_at});
+  }
   try{
     const rosterUrl=env.FC_MEMBERS_URL||`${BASE}/lodestone/freecompany/9232379236109663864/member/`;
     const firstHtml=await fetchPage(rosterUrl); const pages=totalPages(firstHtml); const all=parse(firstHtml);

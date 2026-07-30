@@ -1,0 +1,17 @@
+HOLLOW VEIL UPDATE
+
+Landing page
+- Original artwork remains unchanged.
+- Artwork is centered inside a cinematic black frame and is never cropped.
+- Added subtle mist, ember particles, fade-in, and Enter transition.
+- Responsive behavior for ultrawide, standard desktop, and mobile screens.
+
+Roster page
+- Automatically loads from the configured official Lodestone Free Company member URL.
+- Reads every detected Lodestone roster page, not only page one.
+- Removes duplicate members and caches results in D1 for 30 minutes.
+- Manual Sync now button forces a fresh Lodestone request.
+- Falls back to the latest cached roster if Lodestone is temporarily unavailable.
+- Displays member count, last update time, search, portraits, ranks, worlds, and profile links.
+
+No new npm dependencies were added.

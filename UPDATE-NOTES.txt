@@ -30,3 +30,12 @@ Expanded roster update:
 - Added rank and job filters plus rank/name/level/job sorting.
 - Added responsive expanded cards for desktop and mobile.
 - Updated the Lodestone parser and cached roster payload with the new fields.
+
+Roster parser rebuild (schema v5)
+- Parses each FC member anchor as one isolated record.
+- Reads rank and level from that exact member row.
+- Selects the class/job icon located between rank and level, excluding rank/GC icons.
+- Resolves the hashed Lodestone icon by matching it against the member's textual /class_job/ page.
+- Uses the character profile's exact 24x24 active icon and LV value only as a fallback.
+- Rejects all older incomplete roster cache entries.
+- Includes tests/roster-parser-fixture.mjs with Unknown Wolf => Wanderer / Reaper / 96.

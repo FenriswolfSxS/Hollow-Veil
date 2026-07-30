@@ -1,217 +1,268 @@
 import { json, type Env } from '../_shared';
 
 type Member={
-  id:string;
-  name:string;
-  rank:string;
-  portrait:string;
-  profileUrl:string;
-  world?:string;
-  job?:string;
-  jobIcon?:string;
-  level?:number;
-  grandCompany?:string;
-  diagnostics?:{jobSource?:string;rawJobIcon?:string};
+  id:string;name:string;rank:string;portrait:string;profileUrl:string;world?:string;
+  job?:string;jobIcon?:string;level?:number;grandCompany?:string;schemaVersion:number;
 };
 type CachedRoster={payload:string;updated_at:number};
 
 const BASE='https://na.finalfantasyxiv.com';
+const FC_ID='9232379236109663864';
 const MAX_PAGES=20;
-const CACHE_TTL=6*60*60*1000;
-const CACHE_VERSION=7;
+const CACHE_TTL=30*60*1000;
+const SCHEMA_VERSION=5;
+const PROFILE_CONCURRENCY=5;
 
-const JOB_BY_ID:Record<number,string>={
-  1:'Gladiator',2:'Pugilist',3:'Marauder',4:'Lancer',5:'Archer',6:'Conjurer',7:'Thaumaturge',
-  8:'Carpenter',9:'Blacksmith',10:'Armorer',11:'Goldsmith',12:'Leatherworker',13:'Weaver',14:'Alchemist',15:'Culinarian',
-  16:'Miner',17:'Botanist',18:'Fisher',19:'Paladin',20:'Monk',21:'Warrior',22:'Dragoon',23:'Bard',24:'White Mage',
-  25:'Black Mage',26:'Arcanist',27:'Summoner',28:'Scholar',29:'Rogue',30:'Ninja',31:'Machinist',32:'Dark Knight',
-  33:'Astrologian',34:'Samurai',35:'Red Mage',36:'Blue Mage',37:'Gunbreaker',38:'Dancer',39:'Reaper',40:'Sage',
-  41:'Viper',42:'Pictomancer'
-};
-const JOB_BY_CODE:Record<string,string>={
-  gla:'Gladiator',pgl:'Pugilist',mrd:'Marauder',lnc:'Lancer',arc:'Archer',cnj:'Conjurer',thm:'Thaumaturge',
-  crp:'Carpenter',bsm:'Blacksmith',arm:'Armorer',gsm:'Goldsmith',ltw:'Leatherworker',wvr:'Weaver',alc:'Alchemist',cul:'Culinarian',
-  min:'Miner',btn:'Botanist',fsh:'Fisher',pld:'Paladin',mnk:'Monk',war:'Warrior',drg:'Dragoon',brd:'Bard',whm:'White Mage',
-  blm:'Black Mage',acn:'Arcanist',smn:'Summoner',sch:'Scholar',rog:'Rogue',nin:'Ninja',mch:'Machinist',drk:'Dark Knight',
-  ast:'Astrologian',sam:'Samurai',rdm:'Red Mage',blu:'Blue Mage',gnb:'Gunbreaker',dnc:'Dancer',rpr:'Reaper',sge:'Sage',
-  vpr:'Viper',pct:'Pictomancer'
-};
-const JOB_NAMES=Object.values(JOB_BY_ID);
+const FC_RANKS=['Warden','Veilkeeper','Watcher','Echo','Keeper','Wanderer','Slumber'] as const;
+
+const JOB_NAMES=[
+  'Paladin','Warrior','Dark Knight','Gunbreaker','White Mage','Scholar','Astrologian','Sage',
+  'Monk','Dragoon','Ninja','Samurai','Reaper','Viper','Bard','Machinist','Dancer',
+  'Black Mage','Summoner','Red Mage','Pictomancer','Blue Mage',
+  'Gladiator','Marauder','Conjurer','Arcanist','Pugilist','Lancer','Rogue','Archer','Thaumaturge',
+  'Carpenter','Blacksmith','Armorer','Goldsmith','Leatherworker','Weaver','Alchemist','Culinarian',
+  'Miner','Botanist','Fisher'
+] as const;
 
 function decode(value:string){
-  return value.replace(/&amp;/gi,'&').replace(/&#39;|&#x27;/gi,"'").replace(/&quot;/gi,'"')
+  return value
+    .replace(/&amp;/gi,'&').replace(/&#39;|&#x27;/gi,"'").replace(/&quot;/gi,'"')
     .replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&nbsp;/gi,' ')
     .replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 }
-function attr(tag:string,name:string){return decode(tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`,'i'))?.[1]||'');}
-function absolute(source:string){if(!source)return '';if(source.startsWith('//'))return `https:${source}`;if(source.startsWith('/'))return `${BASE}${source}`;return source;}
-function classText(block:string,classFragment:string){
-  const match=block.match(new RegExp(`<([a-z0-9]+)[^>]*class=["'][^"']*${classFragment}[^"']*["'][^>]*>([\\s\\S]*?)<\\/\\1>`,'i'));
-  return decode(match?.[2]||'');
+
+function getAttr(tag:string,name:string){
+  return decode(tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`,'i'))?.[1]||'');
 }
-function classBlock(block:string,classFragment:string){
-  return block.match(new RegExp(`<([a-z0-9]+)[^>]*class=["'][^"']*${classFragment}[^"']*["'][^>]*>[\\s\\S]*?<\\/\\1>`,'i'))?.[0]||'';
+
+function absoluteUrl(source:string){
+  if(!source)return '';
+  if(source.startsWith('//'))return `https:${source}`;
+  if(source.startsWith('/'))return `${BASE}${source}`;
+  return source;
 }
-function imageTags(block:string){return block.match(/<img\b[^>]*>/gi)||[];}
-function styleImage(block:string){
-  return absolute(block.match(/background(?:-image)?\s*:\s*url\(["']?([^"')]+)["']?\)/i)?.[1]||'');
+
+function assetKey(url:string){
+  try{return new URL(absoluteUrl(url)).pathname.split('/').filter(Boolean).pop()?.toLowerCase()||'';}catch{return url.split('/').pop()?.split('?')[0]?.toLowerCase()||'';}
 }
-function portrait(block:string){
-  for(const tag of imageTags(block)){
-    const source=attr(tag,'data-src')||attr(tag,'src');
-    const hay=`${source} ${attr(tag,'class')} ${attr(tag,'alt')}`;
-    if(/img2\.finalfantasyxiv\.com\/f\/|character.*face|face.*character|entry__chara__face/i.test(hay))return absolute(source);
+
+function firstClassText(block:string,className:string){
+  const pattern=new RegExp(`<[^>]+class=["'][^"']*${className}[^"']*["'][^>]*>([\\s\\S]*?)<\\/[^>]+>`,'i');
+  return decode(block.match(pattern)?.[1]||'');
+}
+
+function findBalancedElement(html:string,start:number,tagName:string){
+  const openRe=new RegExp(`<${tagName}\\b[^>]*>`,'gi');
+  const closeRe=new RegExp(`</${tagName}>`,'gi');
+  openRe.lastIndex=start;
+  const first=openRe.exec(html);
+  if(!first||first.index!==start)return '';
+  let depth=1;let cursor=openRe.lastIndex;
+  while(depth>0){
+    openRe.lastIndex=cursor;closeRe.lastIndex=cursor;
+    const nextOpen=openRe.exec(html);const nextClose=closeRe.exec(html);
+    if(!nextClose)return html.slice(start,Math.min(html.length,start+12000));
+    if(nextOpen&&nextOpen.index<nextClose.index){depth++;cursor=openRe.lastIndex;}else{depth--;cursor=closeRe.lastIndex;}
+  }
+  return html.slice(start,cursor);
+}
+
+function memberAnchorBlocks(html:string){
+  const result:{href:string;id:string;block:string}[]=[];
+  const re=/<a\b[^>]*href=["'](\/lodestone\/character\/(\d+)\/?)['"][^>]*>/gi;
+  for(const match of html.matchAll(re)){
+    const start=match.index||0;
+    const block=findBalancedElement(html,start,'a');
+    if(block)result.push({href:match[1],id:match[2],block});
+  }
+  return result;
+}
+
+function imageTags(block:string){
+  return [...block.matchAll(/<img\b[^>]*>/gi)].map(match=>({tag:match[0],index:match.index||0,src:absoluteUrl(getAttr(match[0],'data-src')||getAttr(match[0],'src'))})).filter(item=>item.src);
+}
+
+function findPortrait(block:string){
+  const images=imageTags(block);
+  for(const image of images){
+    const width=Number(getAttr(image.tag,'width')||0),height=Number(getAttr(image.tag,'height')||0);
+    const haystack=`${image.src} ${getAttr(image.tag,'class')} ${getAttr(image.tag,'alt')}`;
+    if(/img2\.finalfantasyxiv\.com\/f\//i.test(image.src)||/face|portrait|entry__chara/i.test(haystack)||width>=64||height>=64)return image.src;
   }
   return '';
 }
-function cleanJobName(value:string){
-  const text=decode(value).replace(/^Class\s*\/\s*Job\s*[:\-]?\s*/i,'').replace(/\s+Lv\.?\s*\d{1,3}.*$/i,'').trim();
-  return JOB_NAMES.find(name=>name.toLowerCase()===text.toLowerCase());
-}
-function jobFromToken(value:string){
-  const decoded=decode(value);
-  const direct=cleanJobName(decoded);if(direct)return direct;
-  const code=decoded.match(/(?:classjob|class|job|cj)[_\-/]{1,3}([a-z]{3})(?:\b|[_\-/])/i)?.[1]?.toLowerCase();
-  if(code&&JOB_BY_CODE[code])return JOB_BY_CODE[code];
-  const candidates=[...decoded.matchAll(/(?:^|\D)(?:620)?0*(\d{1,2})(?:\D|$)/g)].map(m=>Number(m[1]));
-  for(const id of candidates)if(JOB_BY_ID[id])return JOB_BY_ID[id];
-  return undefined;
-}
-function parseJobArea(block:string){
-  const fcArea=classBlock(block,'entry__freecompany__fc-member')||block;
-  const rankArea=classBlock(fcArea,'fc-member__rank');
-  const candidates=[
-    classBlock(fcArea,'fc-member__class'),classBlock(fcArea,'fc-member__job'),classBlock(fcArea,'class_job'),fcArea
-  ].filter(Boolean);
-  for(const area of candidates){
-    for(const tag of imageTags(area)){
-      if(rankArea&&rankArea.includes(tag))continue;
-      const source=attr(tag,'data-src')||attr(tag,'src');
-      const metadata=[attr(tag,'alt'),attr(tag,'title'),attr(tag,'data-tooltip'),attr(tag,'aria-label'),attr(tag,'class'),source].join(' ');
-      if(/grandcompany|freecompany\/crest|companycrest|character\/face|img2\.finalfantasyxiv\.com\/f\//i.test(metadata))continue;
-      const job=jobFromToken(metadata);
-      if(job)return {job,jobIcon:absolute(source),jobSource:'roster-image',rawJobIcon:source};
-    }
-    const cssUrl=styleImage(area);
-    if(cssUrl){const job=jobFromToken(`${area} ${cssUrl}`);if(job)return {job,jobIcon:cssUrl,jobSource:'roster-css',rawJobIcon:cssUrl};}
-    const job=jobFromToken(area);if(job)return {job,jobIcon:cssUrl||undefined,jobSource:'roster-markup',rawJobIcon:cssUrl||undefined};
-  }
-  return {};
-}
-function parseLevel(block:string){
-  const exact=classText(block,'entry__freecompany__fc-member__level')||classText(block,'entry__freecompany__level');
-  const exactNumber=Number(exact.match(/\b(100|[1-9]?\d)\b/)?.[1]);
-  if(exactNumber>=1&&exactNumber<=100)return exactNumber;
-  const fcArea=classBlock(block,'entry__freecompany__fc-member')||block;
-  const numbers=[...decode(fcArea).matchAll(/\b(100|[1-9]?\d)\b/g)].map(m=>Number(m[1]));
-  return numbers.reverse().find(value=>value>=1&&value<=100);
-}
-function parseRank(block:string){
-  const values=[
-    classText(block,'entry__freecompany__fc-member__rank'),
-    classText(block,'entry__freecompany__rank'),
-    classText(block,'fc-member__rank')
-  ].filter(Boolean);
-  return values[0]||'';
-}
-function memberBlock(html:string,start:number,next:number){
-  const liStart=html.lastIndexOf('<li',start),liEnd=html.indexOf('</li>',start);
-  if(liStart>=0&&liEnd>=0&&liEnd<next+12000)return html.slice(liStart,liEnd+5);
-  return html.slice(start,Math.min(next,start+12000));
+
+function findRank(block:string){
+  const explicit=firstClassText(block,'entry__freecompany__fc-member__rank')||firstClassText(block,'entry__freecompany__rank');
+  const exact=FC_RANKS.find(rank=>new RegExp(`^${rank}$`,'i').test(explicit));
+  if(exact)return exact;
+  const plain=decode(block);
+  return FC_RANKS.find(rank=>new RegExp(`\\b${rank}\\b`,'i').test(plain))||'Unranked';
 }
 
-export function parseRosterHtml(html:string):Member[]{
-  const links=[...html.matchAll(/<a\b[^>]*href=["'](\/lodestone\/character\/(\d+)\/?)['"][^>]*>/gi)];
-  const out:Member[]=[];
-  for(let i=0;i<links.length;i++){
-    const link=links[i],start=link.index||0,next=links[i+1]?.index??html.length,block=memberBlock(html,start,next);
-    const href=link[1],id=link[2];
-    const name=classText(block,'entry__name')||attr(link[0],'title');
-    const face=portrait(block);
-    if(!name||!face)continue;
-    const world=classText(block,'entry__world')||classText(block,'fc-member__world')||undefined;
-    const rank=parseRank(block);
-    const level=parseLevel(block);
-    const found=parseJobArea(block);
-    out.push({
-      id,name,rank:rank||'Unranked',portrait:face,profileUrl:`${BASE}${href}`,world,
-      job:found.job,jobIcon:found.jobIcon,level,
-      grandCompany:classText(block,'fc-member__gc')||undefined,
-      diagnostics:{jobSource:found.jobSource,rawJobIcon:found.rawJobIcon}
+function findLevel(block:string,rank:string){
+  const explicit=firstClassText(block,'entry__freecompany__fc-member__level')||firstClassText(block,'entry__freecompany__level');
+  const direct=Number(explicit.match(/\b(100|[1-9]?\d)\b/)?.[1]);
+  if(direct>=1&&direct<=100)return direct;
+
+  const plain=decode(block);
+  const rankPos=plain.toLowerCase().indexOf(rank.toLowerCase());
+  const tail=rankPos>=0?plain.slice(rankPos+rank.length):plain;
+  const values=[...tail.matchAll(/\b(100|[1-9]?\d)\b/g)].map(m=>Number(m[1])).filter(v=>v>=1&&v<=100);
+  return values[0];
+}
+
+function findActiveJobIcon(block:string,rank:string,level:number|undefined){
+  const images=imageTags(block);
+  if(!images.length)return '';
+
+  // In a Lodestone FC member row the order is portrait -> rank crest -> active class/job icon -> level -> GC crest.
+  // We therefore choose the final small icon before the textual level, after the textual rank.
+  const lower=block.toLowerCase();
+  const rankIndex=lower.indexOf(rank.toLowerCase());
+  const levelMatch=level?new RegExp(`>\\s*${level}\\s*<`,'i').exec(block.slice(Math.max(0,rankIndex))):null;
+  const levelIndex=levelMatch?Math.max(0,rankIndex)+(levelMatch.index||0):-1;
+  const small=images.filter(image=>{
+    if(image.src===findPortrait(block))return false;
+    const width=Number(getAttr(image.tag,'width')||0),height=Number(getAttr(image.tag,'height')||0);
+    return (!width||width<=48)&&(!height||height<=48);
+  });
+  const between=small.filter(image=>image.index>rankIndex&&(levelIndex<0||image.index<levelIndex));
+  if(between.length)return between[between.length-1].src;
+
+  // Fallback: the job icon is usually the second small image in the row (after the FC-rank crest).
+  return small[1]?.src||small[0]?.src||'';
+}
+
+function findWorld(block:string){
+  return firstClassText(block,'entry__world')||decode(block.match(/([A-Za-z][A-Za-z' -]+\s*\[[A-Za-z]+\])/i)?.[1]||'')||undefined;
+}
+
+function findName(block:string){
+  return firstClassText(block,'entry__name')||decode(block.match(/<p\b[^>]*class=["'][^"']*entry__name[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1]||'');
+}
+
+function parseRosterPage(html:string):Member[]{
+  const members:Member[]=[];
+  for(const anchor of memberAnchorBlocks(html)){
+    const name=findName(anchor.block);if(!name)continue;
+    const rank=findRank(anchor.block);
+    const level=findLevel(anchor.block,rank);
+    const portrait=findPortrait(anchor.block);if(!portrait)continue;
+    const jobIcon=findActiveJobIcon(anchor.block,rank,level);
+    members.push({
+      id:anchor.id,name,rank,level,jobIcon,portrait,
+      profileUrl:`${BASE}${anchor.href}`,world:findWorld(anchor.block),schemaVersion:SCHEMA_VERSION
     });
   }
-  return [...new Map(out.map(member=>[member.id,member])).values()];
+  return [...new Map(members.map(member=>[member.id,member])).values()];
 }
 
-function parseProfileCurrentJob(html:string){
-  const likelyAreas=[
-    classBlock(html,'character__class'),classBlock(html,'character__profile'),html.match(/<main[\s\S]*?<\/main>/i)?.[0]||html
-  ];
-  for(const area of likelyAreas){
-    const textCandidates=[
-      classText(area,'character__class__name'),classText(area,'character__class_name'),classText(area,'character__job'),
-      attr(area.match(/<img\b[^>]*class=["'][^"']*(?:character__class|class_job)[^"']*["'][^>]*>/i)?.[0]||'','title'),
-      attr(area.match(/<img\b[^>]*class=["'][^"']*(?:character__class|class_job)[^"']*["'][^>]*>/i)?.[0]||'','alt')
-    ];
-    for(const value of textCandidates){const job=cleanJobName(value);if(job)return {job,jobSource:'profile-text'};}
-    for(const tag of imageTags(area)){
-      const source=attr(tag,'data-src')||attr(tag,'src');
-      const metadata=[attr(tag,'alt'),attr(tag,'title'),attr(tag,'data-tooltip'),attr(tag,'class'),source].join(' ');
-      const job=jobFromToken(metadata);
-      if(job&&/(character__class|class_job|classjob|620\d{2})/i.test(metadata))return {job,jobIcon:absolute(source),jobSource:'profile-image',rawJobIcon:source};
-    }
+function nearbyJobName(html:string,position:number){
+  const before=decode(html.slice(Math.max(0,position-450),position));
+  const after=decode(html.slice(position,Math.min(html.length,position+700)));
+  const combined=`${after} ${before}`;
+  return JOB_NAMES.find(name=>new RegExp(`\\b${name.replace(/ /g,'\\s+')}\\b`,'i').test(combined));
+}
+
+function classJobIconMap(html:string){
+  const map=new Map<string,string>();
+  for(const match of html.matchAll(/<img\b[^>]*>/gi)){
+    const tag=match[0];
+    const src=absoluteUrl(getAttr(tag,'data-src')||getAttr(tag,'src'));
+    if(!src)continue;
+    const attrs=[getAttr(tag,'alt'),getAttr(tag,'title'),getAttr(tag,'data-tooltip'),getAttr(tag,'aria-label')].join(' ');
+    let job=JOB_NAMES.find(name=>new RegExp(`\\b${name.replace(/ /g,'\\s+')}\\b`,'i').test(attrs));
+    if(!job)job=nearbyJobName(html,match.index||0);
+    if(job)map.set(assetKey(src),job);
   }
-  return {};
+  return map;
 }
-function totalPages(html:string){
-  const values=[...html.matchAll(/[?&](?:page|page_index)=(\d+)/gi),...html.matchAll(/Page\s+\d+\s+of\s+(\d+)/gi)].map(m=>Number(m[1]));
-  return Math.min(MAX_PAGES,Math.max(1,...values.filter(Number.isFinite)));
+
+function parseActiveProfile(html:string){
+  const contentStart=html.search(/class=["'][^"']*character__content\s+selected/i);
+  const region=contentStart>=0?html.slice(contentStart,contentStart+12000):html;
+  const level=Number(decode(region).match(/\bLV\s*(100|[1-9]?\d)\b/i)?.[1]||0)||undefined;
+  const images=imageTags(region);
+  const active=images.find(image=>Number(getAttr(image.tag,'width'))===24&&Number(getAttr(image.tag,'height'))===24)
+    ||images.find(image=>/character__class_icon|classjob/i.test(getAttr(image.tag,'class'))&& !/character__classjob$/i.test(getAttr(image.tag,'class')));
+  return {level,jobIcon:active?.src||''};
 }
-async function fetchHtml(url:string){
+
+async function fetchPage(url:string){
   const response=await fetch(url,{headers:{
     'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
     'accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'accept-language':'en-US,en;q=0.9','cache-control':'no-cache','pragma':'no-cache',
-    'referer':`${BASE}/lodestone/`,'cookie':'ldst_touchstone=1; ldst_is_support_browser=1'
+    'referer':`${BASE}/lodestone/`,'cookie':'ldst_touchstone=1'
   },redirect:'follow'});
   if(!response.ok)throw new Error(`Lodestone returned ${response.status}`);
   const html=await response.text();
   if(/unsupported_browser|browser not recommended|access denied/i.test(response.url+' '+html))throw new Error('Lodestone rejected the request');
   return html;
 }
-async function enrichJob(member:Member){
-  if(member.job)return member;
-  for(const url of [member.profileUrl,`${member.profileUrl.replace(/\/$/,'')}/`]){
-    try{
-      const html=await fetchHtml(url);const found=parseProfileCurrentJob(html);
-      if(found.job)return {...member,job:found.job,jobIcon:found.jobIcon||member.jobIcon,diagnostics:{jobSource:found.jobSource,rawJobIcon:found.rawJobIcon}};
-    }catch{/* use roster data if profile is blocked */}
-  }
-  return member;
+
+async function enrichMember(member:Member):Promise<Member>{
+  try{
+    // The class/job page contains textual names beside every class/job icon. Matching the active
+    // roster icon against that page is reliable and avoids guessing from an image hash.
+    const classJobHtml=await fetchPage(`${member.profileUrl}class_job/`);
+    const map=classJobIconMap(classJobHtml);
+    let job=member.jobIcon?map.get(assetKey(member.jobIcon)):undefined;
+    let level=member.level;
+    let jobIcon=member.jobIcon;
+
+    if(!job){
+      // Profile header fallback: reads exactly the 24x24 active icon and LV value shown in the user's HTML.
+      const profileHtml=await fetchPage(member.profileUrl);
+      const active=parseActiveProfile(profileHtml);
+      if(active.level)level=active.level;
+      if(active.jobIcon){jobIcon=active.jobIcon;job=map.get(assetKey(active.jobIcon));}
+    }
+
+    return {...member,job,jobIcon,level,schemaVersion:SCHEMA_VERSION};
+  }catch{return member;}
 }
+
+async function mapWithConcurrency<T,R>(items:T[],limit:number,fn:(item:T)=>Promise<R>){
+  const output=new Array<R>(items.length);let next=0;
+  async function worker(){while(true){const index=next++;if(index>=items.length)return;output[index]=await fn(items[index]);}}
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},()=>worker()));
+  return output;
+}
+
+function totalPages(html:string){
+  const pageNumbers=[...html.matchAll(/[?&](?:page|page_index)=(\d+)/gi)].map(match=>Number(match[1])).filter(Number.isFinite);
+  const pageText=[...html.matchAll(/Page\s+\d+\s+of\s+(\d+)/gi)].map(match=>Number(match[1])).filter(Number.isFinite);
+  return Math.min(MAX_PAGES,Math.max(1,...pageNumbers,...pageText));
+}
+
 async function readCache(env:Env):Promise<CachedRoster|null>{try{return await env.DB.prepare('SELECT payload,updated_at FROM roster_cache WHERE id=1').first<CachedRoster>();}catch{return null;}}
-async function saveCache(env:Env,members:Member[],updatedAt:number){try{await env.DB.prepare(`INSERT INTO roster_cache(id,payload,updated_at) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at`).bind(JSON.stringify({version:CACHE_VERSION,members}),updatedAt).run();}catch{/* optional cache */}}
-function cachedMembers(cache:CachedRoster|null){
-  if(!cache)return null;
-  try{const parsed=JSON.parse(cache.payload);return parsed?.version===CACHE_VERSION&&Array.isArray(parsed.members)?parsed.members as Member[]:null;}catch{return null;}
-}
+async function saveCache(env:Env,members:Member[],updatedAt:number){try{await env.DB.prepare(`INSERT INTO roster_cache(id,payload,updated_at) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at`).bind(JSON.stringify(members),updatedAt).run();}catch{/* optional cache */}}
+
+function validCache(saved:Member[]){return saved.length>0&&saved.every(member=>member.schemaVersion===SCHEMA_VERSION&&member.rank&&member.rank!=='Unranked'&&member.job&&member.jobIcon&&member.level);}
 
 export const onRequestGet:PagesFunction<Env>=async({request,env})=>{
   const force=new URL(request.url).searchParams.get('refresh')==='1';
-  const cached=await readCache(env),saved=cachedMembers(cached),age=cached?Date.now()-cached.updated_at:Infinity;
-  if(!force&&saved&&age<CACHE_TTL)return json({members:saved,cached:true,updatedAt:cached?.updated_at,cacheVersion:CACHE_VERSION});
+  const cached=await readCache(env);const age=cached?Date.now()-cached.updated_at:Infinity;
+  if(!force&&cached&&age<CACHE_TTL){
+    try{const saved=JSON.parse(cached.payload) as Member[];if(validCache(saved))return json({members:saved,cached:true,updatedAt:cached.updated_at});}catch{/* refresh */}
+  }
+
   try{
-    const rosterUrl=env.FC_MEMBERS_URL||`${BASE}/lodestone/freecompany/9232379236109663864/member/`;
-    const first=await fetchHtml(rosterUrl),pages=totalPages(first),all=parseRosterHtml(first);
-    for(let page=2;page<=pages;page++){const url=new URL(rosterUrl);url.searchParams.set('page',String(page));all.push(...parseRosterHtml(await fetchHtml(url.toString())));}
-    let members=[...new Map(all.map(member=>[member.id,member])).values()];
-    if(!members.length)throw new Error('The Lodestone page loaded, but no member cards could be read');
-    members=await Promise.all(members.map(enrichJob));
-    const incomplete=members.filter(member=>!member.rank||member.rank==='Unranked'||!member.level||!member.job);
+    const rosterUrl=env.FC_MEMBERS_URL||`${BASE}/lodestone/freecompany/${FC_ID}/member/`;
+    const firstHtml=await fetchPage(rosterUrl);const pages=totalPages(firstHtml);const all=parseRosterPage(firstHtml);
+    for(let page=2;page<=pages;page++){const url=new URL(rosterUrl);url.searchParams.set('page',String(page));all.push(...parseRosterPage(await fetchPage(url.toString())));}
+    const unique=[...new Map(all.map(member=>[member.id,member])).values()];
+    if(!unique.length)throw new Error('The Lodestone page loaded, but no member rows could be read');
+
+    const members=await mapWithConcurrency(unique,PROFILE_CONCURRENCY,enrichMember);
+    const unresolved=members.filter(member=>!member.job||!member.level||member.rank==='Unranked');
     const updatedAt=Date.now();await saveCache(env,members,updatedAt);
-    return json({members,cached:false,updatedAt,pages,cacheVersion:CACHE_VERSION,warning:incomplete.length?`${incomplete.length} member record${incomplete.length===1?' is':'s are'} missing a Lodestone job value.`:undefined});
+    return json({members,cached:false,updatedAt,pages,warning:unresolved.length?`${unresolved.length} member record${unresolved.length===1?'':'s'} could not be fully resolved from Lodestone.`:undefined});
   }catch(error){
     const warning=error instanceof Error?error.message:'Live roster unavailable';
-    return json({members:saved||[],cached:Boolean(saved),updatedAt:cached?.updated_at||null,cacheVersion:CACHE_VERSION,warning},saved?200:502);
+    let saved:Member[]=[];try{saved=cached?JSON.parse(cached.payload):[];}catch{/* empty */}
+    return json({members:saved,cached:Boolean(saved.length),updatedAt:cached?.updated_at||null,warning},saved.length?200:502);
   }
 };

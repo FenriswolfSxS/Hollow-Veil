@@ -75,7 +75,3 @@
 .job-value img{width:23px;height:23px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(200,167,106,.2))}.level-value{font-family:Cinzel;font-size:20px!important;color:#e6d1a7!important}
 @media(max-width:1050px){.roster-controls{grid-template-columns:1fr auto}.roster-filters{grid-column:1/-1;grid-row:2;flex-wrap:wrap}.roster-filters select{flex:1;max-width:none;min-width:130px}}
 @media(max-width:640px){.roster-controls{grid-template-columns:1fr}.sync-button{width:100%}.roster-filters{grid-column:auto;grid-row:auto}.roster-filters>svg{display:none}.roster-filters select{width:100%;flex-basis:100%}.expanded-roster{grid-template-columns:1fr}.member-card.expanded-card{grid-template-columns:82px minmax(0,1fr);gap:14px;padding:14px}.expanded-card .portrait-wrap{width:82px;height:116px}.expanded-card .portrait-wrap img{width:82px;height:116px;transform:scale(.82)}.member-stat-grid{grid-template-columns:1fr 1fr}.member-stat-grid>div:last-child{grid-column:1/-1}.member-title h2{font-size:17px}}
-/* Verified Lodestone calling presentation */
-.job-value{display:flex!important;align-items:center;gap:10px;min-height:42px}
-.job-value img{width:38px!important;height:38px!important;object-fit:contain!important;flex:0 0 38px;filter:drop-shadow(0 0 9px rgba(200,167,106,.26))!important;border-radius:0!important;transform:none!important}
-.job-value span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -1,0 +1,18 @@
+const FC_RANKS=['Warden','Veilkeeper','Watcher','Echo','Keeper','Wanderer','Slumber'];
+const JOB_NAMES=['Paladin','Warrior','Dark Knight','Gunbreaker','White Mage','Scholar','Astrologian','Sage','Monk','Dragoon','Ninja','Samurai','Reaper','Viper','Bard','Machinist','Dancer','Black Mage','Summoner','Red Mage','Pictomancer','Blue Mage','Gladiator','Marauder','Conjurer','Arcanist','Pugilist','Lancer','Rogue','Archer','Thaumaturge','Carpenter','Blacksmith','Armorer','Goldsmith','Leatherworker','Weaver','Alchemist','Culinarian','Miner','Botanist','Fisher'];
+function decode(v){return v.replace(/&amp;/gi,'&').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()}
+function getAttr(tag,name){return decode(tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`,'i'))?.[1]||'')}
+function absoluteUrl(s){return s.startsWith('/')?'https://na.finalfantasyxiv.com'+s:s}
+function imageTags(block){return [...block.matchAll(/<img\b[^>]*>/gi)].map(m=>({tag:m[0],index:m.index||0,src:absoluteUrl(getAttr(m[0],'data-src')||getAttr(m[0],'src'))})).filter(x=>x.src)}
+function findPortrait(block){for(const i of imageTags(block)){const w=Number(getAttr(i.tag,'width')||0),h=Number(getAttr(i.tag,'height')||0);if(/img2\.finalfantasyxiv\.com\/f\//i.test(i.src)||w>=64||h>=64)return i.src}return ''}
+function findActiveJobIcon(block,rank,level){const images=imageTags(block);const lower=block.toLowerCase();const rankIndex=lower.indexOf(rank.toLowerCase());const levelMatch=level?new RegExp(`>\\s*${level}\\s*<`,'i').exec(block.slice(Math.max(0,rankIndex))):null;const levelIndex=levelMatch?Math.max(0,rankIndex)+(levelMatch.index||0):-1;const portrait=findPortrait(block);const small=images.filter(i=>{if(i.src===portrait)return false;const w=Number(getAttr(i.tag,'width')||0),h=Number(getAttr(i.tag,'height')||0);return (!w||w<=48)&&(!h||h<=48)});const between=small.filter(i=>i.index>rankIndex&&(levelIndex<0||i.index<levelIndex));return between.at(-1)?.src||small[1]?.src||small[0]?.src||''}
+function assetKey(url){return new URL(url).pathname.split('/').filter(Boolean).pop().toLowerCase()}
+function nearbyJobName(html,pos){const before=decode(html.slice(Math.max(0,pos-450),pos));const after=decode(html.slice(pos,Math.min(html.length,pos+700)));return JOB_NAMES.find(n=>new RegExp(`\\b${n.replace(/ /g,'\\s+')}\\b`,'i').test(after+' '+before))}
+function classJobIconMap(html){const map=new Map();for(const m of html.matchAll(/<img\b[^>]*>/gi)){const src=getAttr(m[0],'src');if(!src)continue;const job=nearbyJobName(html,m.index||0);if(job)map.set(assetKey(src),job)}return map}
+const row=`<a href="/lodestone/character/25440392/"><img src="https://img2.finalfantasyxiv.com/f/portrait.jpg" width="96" height="96"><p class="entry__name">Unknown Wolf</p><p class="entry__world">Leviathan [Primal]</p><img src="https://lds-img.finalfantasyxiv.com/rank.png" width="24" height="24"><span>Wanderer</span><img src="https://lds-img.finalfantasyxiv.com/h/7/cLlXUaeMPJDM2nBhIeM-uDmPzM.png" width="24" height="24"><span>96</span><img src="https://lds-img.finalfantasyxiv.com/gc.png" width="24" height="24"></a>`;
+const icon=findActiveJobIcon(row,'Wanderer',96);
+if(!icon.includes('cLlXU'))throw new Error('wrong active icon: '+icon);
+const classHtml=`<li><img src="https://lds-img.finalfantasyxiv.com/h/7/cLlXUaeMPJDM2nBhIeM-uDmPzM.png" width="24" height="24"><span>Reaper</span><span>96</span></li><li><img src="https://lds-img.finalfantasyxiv.com/blacksmith.png"><span>Blacksmith</span><span>13</span></li>`;
+const job=classJobIconMap(classHtml).get(assetKey(icon));
+if(job!=='Reaper')throw new Error('wrong job: '+job);
+console.log(JSON.stringify({rank:'Wanderer',job,level:96,icon},null,2));

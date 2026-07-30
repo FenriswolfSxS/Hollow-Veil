@@ -54,3 +54,24 @@
   .entrance .enter-button{width:calc(100vw - 92px);white-space:normal;line-height:1.55;letter-spacing:.18em;padding:14px 8px}
   .entrance .enter-button:hover{letter-spacing:.22em}
 }
+
+/* Expanded Lodestone roster */
+.roster-controls{display:grid;grid-template-columns:minmax(260px,1.4fr) auto auto;align-items:center;gap:12px;padding:14px 16px;margin-bottom:24px;border-radius:20px}
+.roster-search{display:flex;align-items:center;gap:10px;min-width:0;border:1px solid rgba(200,167,106,.2);border-radius:999px;background:rgba(4,6,8,.55);padding:0 16px}
+.roster-search input{width:100%;min-width:0;padding:12px 4px;border:0;outline:0;background:transparent;color:#eee0c7}
+.roster-filters{display:flex;align-items:center;gap:8px}.roster-filters>svg{color:#a78d66}
+.roster-filters select{max-width:150px;padding:10px 30px 10px 12px;border:1px solid rgba(200,167,106,.2);border-radius:999px;background:#090c0f;color:#d8ccb7;outline:none}
+.sync-button{border:1px solid rgba(200,167,106,.3);border-radius:999px;padding:11px 16px;background:rgba(8,10,12,.9);color:#e1d3b9;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;white-space:nowrap}
+.sync-button:hover{border-color:rgba(200,167,106,.65);color:#fff2d2}.sync-button:disabled{opacity:.65;cursor:wait}
+.expanded-roster{grid-template-columns:repeat(auto-fill,minmax(390px,1fr))}
+.member-card.expanded-card{grid-template-columns:100px minmax(0,1fr);padding:18px;align-items:stretch;gap:20px}
+.expanded-card .portrait-wrap img{width:100px;height:142px}.expanded-card .rank-rune{width:30px;height:30px}
+.member-details{min-width:0;display:flex;flex-direction:column}.member-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.member-title h2{font-size:20px;overflow-wrap:anywhere}.member-title a{flex:0 0 auto;color:#a99069;padding:3px}.member-title a:hover{color:#ead8b5}
+.member-world{margin:5px 0 13px!important;color:#9d907b!important;font-size:15px}
+.member-stat-grid{margin-top:auto;display:grid;grid-template-columns:1.1fr 1.5fr .55fr;gap:8px}
+.member-stat-grid>div{min-width:0;padding:9px 10px;border:1px solid rgba(200,167,106,.11);border-radius:12px;background:rgba(0,0,0,.2)}
+.member-stat-grid span{display:flex;align-items:center;gap:5px;margin-bottom:5px;color:#8f806a;font-family:Cinzel;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+.member-stat-grid strong{display:flex;align-items:center;gap:6px;color:#d9cdb7;font-size:14px;font-weight:500;line-height:1.15;overflow-wrap:anywhere}
+.job-value img{width:23px;height:23px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(200,167,106,.2))}.level-value{font-family:Cinzel;font-size:20px!important;color:#e6d1a7!important}
+@media(max-width:1050px){.roster-controls{grid-template-columns:1fr auto}.roster-filters{grid-column:1/-1;grid-row:2;flex-wrap:wrap}.roster-filters select{flex:1;max-width:none;min-width:130px}}
+@media(max-width:640px){.roster-controls{grid-template-columns:1fr}.sync-button{width:100%}.roster-filters{grid-column:auto;grid-row:auto}.roster-filters>svg{display:none}.roster-filters select{width:100%;flex-basis:100%}.expanded-roster{grid-template-columns:1fr}.member-card.expanded-card{grid-template-columns:82px minmax(0,1fr);gap:14px;padding:14px}.expanded-card .portrait-wrap img{width:82px;height:116px}.member-stat-grid{grid-template-columns:1fr 1fr}.member-stat-grid>div:last-child{grid-column:1/-1}.member-title h2{font-size:17px}}

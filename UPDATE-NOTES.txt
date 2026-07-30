@@ -23,3 +23,10 @@ JULY 30 FIXES
 - Rebuilt the Lodestone parser around character profile links and current member-card classes.
 - The live roster no longer fails when the D1 cache table has not yet been migrated or bound.
 - Cache read/write failures are isolated so a successful Lodestone response still reaches the page.
+
+Expanded roster update:
+- Added FC rank, current Lodestone class/job, job icon, and current level to member cards.
+- Added search across name, rank, job, level, world, and Grand Company.
+- Added rank and job filters plus rank/name/level/job sorting.
+- Added responsive expanded cards for desktop and mobile.
+- Updated the Lodestone parser and cached roster payload with the new fields.

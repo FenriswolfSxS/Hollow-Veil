@@ -5,7 +5,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "hollow-veil-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "7e778793-1d71-4b5b-bf94-034101c931fd"
 
 [vars]
 SITE_URL = "https://hollowveilfc.com"

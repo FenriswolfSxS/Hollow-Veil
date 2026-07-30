@@ -23,8 +23,8 @@ export default function Entrance(){
       <span className="frame-glow" aria-hidden="true" />
     </figure>
 
-    <button className="enter-button" onClick={enter} disabled={leaving} aria-label="Enter Hollow Veil">
-      <span>Enter</span>
+    <button className="enter-button" onClick={enter} disabled={leaving} aria-label="Walk not far where the shadows veil">
+      <span>Walk not far where the shadows veil</span>
     </button>
   </main>;
 }

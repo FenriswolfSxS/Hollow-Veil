@@ -15,3 +15,11 @@ Roster page
 - Displays member count, last update time, search, portraits, ranks, worlds, and profile links.
 
 No new npm dependencies were added.
+
+JULY 30 FIXES
+- Landing action now reads: “Walk not far where the shadows veil.”
+- Reduced the height and padding of the home-page hero panel.
+- Interior backgrounds now preserve the original artwork aspect ratio instead of enlarging it with cover.
+- Rebuilt the Lodestone parser around character profile links and current member-card classes.
+- The live roster no longer fails when the D1 cache table has not yet been migrated or bound.
+- Cache read/write failures are isolated so a successful Lodestone response still reaches the page.

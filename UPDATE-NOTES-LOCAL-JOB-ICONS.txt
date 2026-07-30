@@ -1,0 +1,9 @@
+Hollow Veil roster recovery
+
+- Started from the user-provided last working version.
+- Added the user-provided FFXIV job icons under public/job-icons.
+- Current job is now read only from the active character profile banner.
+- The full class/job list is never used to choose the active job, preventing Reaper/Blacksmith mismatches.
+- Rank and level remain sourced from each exact FC member row.
+- Profile failures no longer take down the entire roster page.
+- Cache schema advanced to version 6 so incorrect older job mappings are discarded.

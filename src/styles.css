@@ -75,3 +75,46 @@
 .job-value img{width:23px;height:23px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(200,167,106,.2))}.level-value{font-family:Cinzel;font-size:20px!important;color:#e6d1a7!important}
 @media(max-width:1050px){.roster-controls{grid-template-columns:1fr auto}.roster-filters{grid-column:1/-1;grid-row:2;flex-wrap:wrap}.roster-filters select{flex:1;max-width:none;min-width:130px}}
 @media(max-width:640px){.roster-controls{grid-template-columns:1fr}.sync-button{width:100%}.roster-filters{grid-column:auto;grid-row:auto}.roster-filters>svg{display:none}.roster-filters select{width:100%;flex-basis:100%}.expanded-roster{grid-template-columns:1fr}.member-card.expanded-card{grid-template-columns:82px minmax(0,1fr);gap:14px;padding:14px}.expanded-card .portrait-wrap{width:82px;height:116px}.expanded-card .portrait-wrap img{width:82px;height:116px;transform:scale(.82)}.member-stat-grid{grid-template-columns:1fr 1fr}.member-stat-grid>div:last-child{grid-column:1/-1}.member-title h2{font-size:17px}}
+
+/* Haunted passage between the landing page and the interior site. */
+.entrance{
+  transition:opacity 2.2s cubic-bezier(.22,.61,.36,1),filter 2.2s cubic-bezier(.22,.61,.36,1),transform 2.2s cubic-bezier(.22,.61,.36,1);
+}
+.entrance.is-leaving{
+  opacity:0;
+  filter:blur(15px) brightness(.46) saturate(.72);
+  transform:scale(1.035);
+}
+.entrance.is-leaving .entrance-mist-a{animation-duration:4.8s;opacity:.9;transform:translateX(35vw) scale(1.6)}
+.entrance.is-leaving .entrance-mist-b{animation-duration:5.4s;opacity:.85;transform:translateX(-32vw) scale(1.55)}
+.site-shell{animation:veilArrival 2.1s cubic-bezier(.2,.65,.25,1) both}
+@keyframes veilArrival{
+  from{opacity:0;filter:blur(13px) brightness(.42);transform:scale(1.018)}
+  45%{opacity:.48;filter:blur(9px) brightness(.62)}
+  to{opacity:1;filter:blur(0) brightness(1);transform:scale(1)}
+}
+.veil-transition{position:fixed;z-index:100;inset:0;pointer-events:none;opacity:0;visibility:hidden;background:rgba(2,4,5,.12);transition:opacity 1.9s ease,visibility 0s linear 1.9s;overflow:hidden}
+.veil-transition:after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(56,70,76,.12),rgba(1,2,3,.94) 72%);opacity:0;transition:opacity 1.9s ease}
+.veil-transition span{position:absolute;width:85vw;height:34vh;border-radius:50%;background:radial-gradient(ellipse,rgba(176,194,201,.20),rgba(95,113,121,.07) 42%,transparent 72%);filter:blur(38px);opacity:0}
+.veil-transition span:nth-child(1){left:-45vw;top:8%;transform:translateX(-12vw) scale(.8)}
+.veil-transition span:nth-child(2){right:-48vw;top:38%;transform:translateX(14vw) scale(.9)}
+.veil-transition span:nth-child(3){left:-30vw;bottom:-5%;transform:translateX(-10vw) scale(.9)}
+.site-shell.is-returning .veil-transition{visibility:visible;opacity:1;transition:opacity 1.9s ease}
+.site-shell.is-returning .veil-transition:after{opacity:1}
+.site-shell.is-returning .veil-transition span{opacity:1;transition:opacity .8s ease,transform 1.9s cubic-bezier(.2,.65,.25,1)}
+.site-shell.is-returning .veil-transition span:nth-child(1){transform:translateX(70vw) scale(1.55)}
+.site-shell.is-returning .veil-transition span:nth-child(2){transform:translateX(-68vw) scale(1.65)}
+.site-shell.is-returning .veil-transition span:nth-child(3){transform:translateX(62vw) scale(1.75)}
+.site-shell.is-returning .site-main,.site-shell.is-returning .shrine-nav{filter:blur(8px) brightness(.55);opacity:.25;transition:filter 1.9s ease,opacity 1.9s ease}
+.nav-crest{width:100%;font:inherit}
+.nav-crest:disabled{cursor:default}
+
+/* Keep three-digit levels on one line in compact roster cards. */
+.member-stat-grid{grid-template-columns:minmax(88px,1.1fr) minmax(120px,1.5fr) minmax(58px,.62fr)}
+.member-stat-grid>div:last-child{text-align:center}
+.level-value{white-space:nowrap;justify-content:center!important;font-size:19px!important;line-height:1!important;font-variant-numeric:tabular-nums}
+@media(max-width:640px){
+  .member-stat-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .member-stat-grid>div:last-child{grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce){.veil-transition,.veil-transition:after,.veil-transition span,.site-shell{animation:none!important;transition:none!important}}

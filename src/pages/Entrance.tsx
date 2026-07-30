@@ -8,7 +8,7 @@ export default function Entrance(){
   const enter=()=>{
     if(leaving)return;
     setLeaving(true);
-    window.setTimeout(()=>nav('/home'),900);
+    window.setTimeout(()=>nav('/home'),2200);
   };
 
   return <main className={`entrance${leaving?' is-leaving':''}`} aria-label="Hollow Veil entrance">

@@ -1,5 +1,6 @@
 import { Search, ExternalLink, RefreshCw, SlidersHorizontal, Shield, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { identifyJob, loadJobDefinitions, type JobDefinition } from '../jobIconMatcher';
 
 type Member={id:string;name:string;rank:string;portrait:string;profileUrl:string;world?:string;job?:string;jobIcon?:string;level?:number;grandCompany?:string};
 type RosterResponse={members?:Member[];cached?:boolean;updatedAt?:number|null;warning?:string};
@@ -9,15 +10,36 @@ export default function Roster(){
   const [members,setMembers]=useState<Member[]>([]),[q,setQ]=useState(''),[rank,setRank]=useState('All ranks'),[job,setJob]=useState('All jobs'),[sort,setSort]=useState<SortKey>('rank');
   const [loading,setLoading]=useState(true),[refreshing,setRefreshing]=useState(false);
   const [status,setStatus]=useState<{cached?:boolean;updatedAt?:number|null;warning?:string}>({});
+  const [resolvedJobs,setResolvedJobs]=useState<Record<string,JobDefinition>>({});
+  const [jobLookupRunning,setJobLookupRunning]=useState(false);
 
   const load=async(force=false)=>{force?setRefreshing(true):setLoading(true);try{const response=await fetch(`/api/roster${force?'?refresh=1':''}`);const data:RosterResponse=await response.json();setMembers(data.members||[]);setStatus({cached:data.cached,updatedAt:data.updatedAt,warning:data.warning});}catch{setStatus({warning:'The roster could not be reached. Please try again shortly.'});}finally{setLoading(false);setRefreshing(false);}};
   useEffect(()=>{void load();},[]);
 
-  const ranks=useMemo(()=>[...new Set(members.map(m=>m.rank).filter(Boolean))], [members]);
-  const jobs=useMemo(()=>[...new Set(members.map(m=>m.job).filter((value):value is string=>Boolean(value)))].sort(),[members]);
+
+  useEffect(()=>{
+    let cancelled=false;
+    const unresolved=members.filter(member=>member.jobIcon&&!member.job&&!resolvedJobs[member.id]);
+    if(!unresolved.length)return;
+    setJobLookupRunning(true);
+    void (async()=>{
+      await loadJobDefinitions();
+      const updates:Record<string,JobDefinition>={};
+      for(const member of unresolved){
+        try{const match=await identifyJob(member.jobIcon!);if(match)updates[member.id]=match;}catch{/* leave unresolved rather than show a wrong job */}
+      }
+      if(!cancelled&&Object.keys(updates).length)setResolvedJobs(current=>({...current,...updates}));
+      if(!cancelled)setJobLookupRunning(false);
+    })();
+    return()=>{cancelled=true;};
+  },[members]);
+  const displayMembers=useMemo(()=>members.map(member=>{const resolved=resolvedJobs[member.id];return resolved?{...member,job:resolved.name,jobIcon:resolved.icon}:member;}),[members,resolvedJobs]);
+
+  const ranks=useMemo(()=>[...new Set(displayMembers.map(m=>m.rank).filter(Boolean))], [displayMembers]);
+  const jobs=useMemo(()=>[...new Set(displayMembers.map(m=>m.job).filter((value):value is string=>Boolean(value)))].sort(),[displayMembers]);
   const rankOrder=useMemo(()=>new Map(ranks.map((value,index)=>[value,index])),[ranks]);
   const shown=useMemo(()=>{
-    const filtered=[...members].filter(m=>{
+    const filtered=[...displayMembers].filter(m=>{
     const needle=q.trim().toLowerCase();
     const matchesText=!needle||[m.name,m.rank,m.world,m.job,m.level?.toString(),m.grandCompany].filter(Boolean).join(' ').toLowerCase().includes(needle);
       return matchesText&&(rank==='All ranks'||m.rank===rank)&&(job==='All jobs'||m.job===job);
@@ -29,12 +51,12 @@ export default function Roster(){
       if(sort==='job')return collator.compare(a.job||'ZZZ',b.job||'ZZZ')||collator.compare(a.name,b.name);
       return (rankOrder.get(a.rank)??999)-(rankOrder.get(b.rank)??999)||collator.compare(a.name,b.name);
     });
-  },[members,q,rank,job,sort,rankOrder]);
+  },[displayMembers,q,rank,job,sort,rankOrder]);
   const updated=status.updatedAt?new Date(status.updatedAt).toLocaleString():null;
 
   return <section className="page roster-page">
     <header className="page-heading"><p className="eyebrow">The Forest Remembers</p><h1>Free Company Roster</h1><p>Ranks, current jobs, levels, and profiles synchronized from the official Hollow Veil Lodestone roster.</p></header>
-    <div className="roster-meta ornamental"><div><strong>{members.length}</strong><span>Veilbound Members</span></div><p>{status.cached?'Showing the latest saved roster':'Live roster synchronized'}{updated?` · Updated ${updated}`:''}</p></div>
+    <div className="roster-meta ornamental"><div><strong>{members.length}</strong><span>Veilbound Members</span></div><p>{status.cached?'Showing the latest saved roster':'Live roster synchronized'}{updated?` · Updated ${updated}`:''}{jobLookupRunning?' · Identifying jobs…':''}</p></div>
 
     <div className="roster-controls ornamental">
       <label className="roster-search"><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search names, ranks, jobs, levels, or worlds"/></label>
@@ -49,7 +71,7 @@ export default function Roster(){
         <p className="member-world">{m.world||'World hidden in the mist'}</p>
         <div className="member-stat-grid">
           <div><span><Shield size={14}/>FC Rank</span><strong>{m.rank}</strong></div>
-          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{m.jobIcon&&<img src={m.jobIcon} alt=""/>}{m.job||'Not shown'}</strong></div>
+          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{m.jobIcon&&<img src={m.job?m.jobIcon:`/api/job-icon?url=${encodeURIComponent(m.jobIcon)}`} alt=""/>}{m.job||'Identifying…'}</strong></div>
           <div><span>Level</span><strong className="level-value">{m.level??'—'}</strong></div>
         </div>
       </div>

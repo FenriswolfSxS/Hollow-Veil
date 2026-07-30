@@ -10,7 +10,7 @@ const BASE='https://na.finalfantasyxiv.com';
 const FC_ID='9232379236109663864';
 const MAX_PAGES=20;
 const CACHE_TTL=30*60*1000;
-const SCHEMA_VERSION=5;
+const SCHEMA_VERSION=6;
 const PROFILE_CONCURRENCY=5;
 
 const FC_RANKS=['Warden','Veilkeeper','Watcher','Echo','Keeper','Wanderer','Slumber'] as const;
@@ -240,7 +240,7 @@ function totalPages(html:string){
 async function readCache(env:Env):Promise<CachedRoster|null>{try{return await env.DB.prepare('SELECT payload,updated_at FROM roster_cache WHERE id=1').first<CachedRoster>();}catch{return null;}}
 async function saveCache(env:Env,members:Member[],updatedAt:number){try{await env.DB.prepare(`INSERT INTO roster_cache(id,payload,updated_at) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at`).bind(JSON.stringify(members),updatedAt).run();}catch{/* optional cache */}}
 
-function validCache(saved:Member[]){return saved.length>0&&saved.every(member=>member.schemaVersion===SCHEMA_VERSION&&member.rank&&member.rank!=='Unranked'&&member.job&&member.jobIcon&&member.level);}
+function validCache(saved:Member[]){return saved.length>0&&saved.every(member=>member.schemaVersion===SCHEMA_VERSION&&member.rank&&member.rank!=='Unranked'&&member.jobIcon&&member.level);}
 
 export const onRequestGet:PagesFunction<Env>=async({request,env})=>{
   const force=new URL(request.url).searchParams.get('refresh')==='1';

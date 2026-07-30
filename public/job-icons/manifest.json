@@ -1,0 +1,212 @@
+[
+  {
+    "name": "Alchemist",
+    "role": "Crafter",
+    "icon": "/job-icons/alchemist.png"
+  },
+  {
+    "name": "Arcanist",
+    "role": "Magical Ranged DPS",
+    "icon": "/job-icons/arcanist.png"
+  },
+  {
+    "name": "Archer",
+    "role": "Physical Ranged DPS",
+    "icon": "/job-icons/archer.png"
+  },
+  {
+    "name": "Armorer",
+    "role": "Crafter",
+    "icon": "/job-icons/armorer.png"
+  },
+  {
+    "name": "Astrologian",
+    "role": "Healer",
+    "icon": "/job-icons/astrologian.png"
+  },
+  {
+    "name": "Bard",
+    "role": "Physical Ranged DPS",
+    "icon": "/job-icons/bard.png"
+  },
+  {
+    "name": "Black Mage",
+    "role": "Magical Ranged DPS",
+    "icon": "/job-icons/black-mage.png"
+  },
+  {
+    "name": "Blacksmith",
+    "role": "Crafter",
+    "icon": "/job-icons/blacksmith.png"
+  },
+  {
+    "name": "Blue Mage",
+    "role": "Limited Job",
+    "icon": "/job-icons/blue-mage.png"
+  },
+  {
+    "name": "Botanist",
+    "role": "Gatherer",
+    "icon": "/job-icons/botanist.png"
+  },
+  {
+    "name": "Carpenter",
+    "role": "Crafter",
+    "icon": "/job-icons/carpenter.png"
+  },
+  {
+    "name": "Conjurer",
+    "role": "Healer",
+    "icon": "/job-icons/conjurer.png"
+  },
+  {
+    "name": "Culinarian",
+    "role": "Crafter",
+    "icon": "/job-icons/culinarian.png"
+  },
+  {
+    "name": "Dancer",
+    "role": "Physical Ranged DPS",
+    "icon": "/job-icons/dancer.png"
+  },
+  {
+    "name": "Dark Knight",
+    "role": "Tank",
+    "icon": "/job-icons/dark-knight.png"
+  },
+  {
+    "name": "Dragoon",
+    "role": "Melee DPS",
+    "icon": "/job-icons/dragoon.png"
+  },
+  {
+    "name": "Fisher",
+    "role": "Gatherer",
+    "icon": "/job-icons/fisher.png"
+  },
+  {
+    "name": "Gladiator",
+    "role": "Tank",
+    "icon": "/job-icons/gladiator.png"
+  },
+  {
+    "name": "Goldsmith",
+    "role": "Crafter",
+    "icon": "/job-icons/goldsmith.png"
+  },
+  {
+    "name": "Gunbreaker",
+    "role": "Tank",
+    "icon": "/job-icons/gunbreaker.png"
+  },
+  {
+    "name": "Lancer",
+    "role": "Melee DPS",
+    "icon": "/job-icons/lancer.png"
+  },
+  {
+    "name": "Leatherworker",
+    "role": "Crafter",
+    "icon": "/job-icons/leatherworker.png"
+  },
+  {
+    "name": "Machinist",
+    "role": "Physical Ranged DPS",
+    "icon": "/job-icons/machinist.png"
+  },
+  {
+    "name": "Marauder",
+    "role": "Tank",
+    "icon": "/job-icons/marauder.png"
+  },
+  {
+    "name": "Miner",
+    "role": "Gatherer",
+    "icon": "/job-icons/miner.png"
+  },
+  {
+    "name": "Monk",
+    "role": "Melee DPS",
+    "icon": "/job-icons/monk.png"
+  },
+  {
+    "name": "Ninja",
+    "role": "Melee DPS",
+    "icon": "/job-icons/ninja.png"
+  },
+  {
+    "name": "Paladin",
+    "role": "Tank",
+    "icon": "/job-icons/paladin.png"
+  },
+  {
+    "name": "Pictomancer",
+    "role": "Magical Ranged DPS",
+    "icon": "/job-icons/pictomancer.png"
+  },
+  {
+    "name": "Pugilist",
+    "role": "Melee DPS",
+    "icon": "/job-icons/pugilist.png"
+  },
+  {
+    "name": "Reaper",
+    "role": "Melee DPS",
+    "icon": "/job-icons/reaper.png"
+  },
+  {
+    "name": "Red Mage",
+    "role": "Magical Ranged DPS",
+    "icon": "/job-icons/red-mage.png"
+  },
+  {
+    "name": "Rogue",
+    "role": "Melee DPS",
+    "icon": "/job-icons/rogue.png"
+  },
+  {
+    "name": "Sage",
+    "role": "Healer",
+    "icon": "/job-icons/sage.png"
+  },
+  {
+    "name": "Samurai",
+    "role": "Melee DPS",
+    "icon": "/job-icons/samurai.png"
+  },
+  {
+    "name": "Scholar",
+    "role": "Healer",
+    "icon": "/job-icons/scholar.png"
+  },
+  {
+    "name": "Summoner",
+    "role": "Magical Ranged DPS",
+    "icon": "/job-icons/summoner.png"
+  },
+  {
+    "name": "Thaumaturge",
+    "role": "Magical Ranged DPS",
+    "icon": "/job-icons/thaumaturge.png"
+  },
+  {
+    "name": "Viper",
+    "role": "Melee DPS",
+    "icon": "/job-icons/viper.png"
+  },
+  {
+    "name": "Warrior",
+    "role": "Tank",
+    "icon": "/job-icons/warrior.png"
+  },
+  {
+    "name": "Weaver",
+    "role": "Crafter",
+    "icon": "/job-icons/weaver.png"
+  },
+  {
+    "name": "White Mage",
+    "role": "Healer",
+    "icon": "/job-icons/white-mage.png"
+  }
+]

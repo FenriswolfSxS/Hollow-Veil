@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { CalendarDays, Home, LogIn, Menu, Shield, UserRound, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -6,16 +6,24 @@ type Me = { authenticated: boolean; user?: { username: string; avatarUrl: string
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const navigate = useNavigate();
   const [me, setMe] = useState<Me>({ authenticated: false });
   useEffect(() => { fetch('/api/me').then(r => r.json()).then(setMe).catch(() => {}); }, []);
+  const returnToVeil = () => {
+    if (returning) return;
+    setOpen(false);
+    setReturning(true);
+    window.setTimeout(() => navigate('/'), 1900);
+  };
   const links = [
     ['/home', 'Home', Home], ['/roster', 'Roster', Users], ['/events', 'Events', CalendarDays], ['/profile', 'Profile', UserRound],
   ] as const;
-  return <div className="site-shell">
+  return <div className={`site-shell${returning ? ' is-returning' : ''}`}>
     <div className="mist mist-a"/><div className="mist mist-b"/>
     <button className="nav-toggle" onClick={() => setOpen(v => !v)} aria-label="Toggle navigation">{open ? <X/> : <Menu/>}</button>
     <aside className={`shrine-nav ${open ? 'open' : ''}`}>
-      <Link className="nav-crest" to="/" onClick={() => setOpen(false)} aria-label="Return to the Hollow Veil landing page"><span>虚紗</span><small>HOLLOW VEIL</small></Link>
+      <button className="nav-crest" type="button" onClick={returnToVeil} disabled={returning} aria-label="Return to the Hollow Veil landing page"><span>虚紗</span><small>HOLLOW VEIL</small></button>
       <nav>{links.map(([to,label,Icon]) => <NavLink key={to} to={to} onClick={() => setOpen(false)}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
       <div className="account-card">
         {me.authenticated && me.user ? <>
@@ -26,5 +34,6 @@ export default function Layout() {
       </div>
     </aside>
     <main className="site-main"><Outlet /></main>
+    <div className="veil-transition" aria-hidden="true"><span/><span/><span/></div>
   </div>;
 }

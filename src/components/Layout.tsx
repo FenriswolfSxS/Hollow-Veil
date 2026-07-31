@@ -35,19 +35,55 @@ export default function Layout() {
     </aside>
     <main className="site-main"><Outlet /></main>
     <div className="escape-transition" aria-hidden="true">
-      <svg className="root-net root-net-left" viewBox="0 0 900 900" preserveAspectRatio="none">
-        <path d="M-30 820 C110 740 80 570 250 520 C390 480 300 330 470 285 C610 248 545 95 760 35"/>
-        <path d="M-20 675 C95 620 150 650 220 555 C280 475 245 405 365 355 C470 310 500 230 570 120"/>
-        <path d="M35 900 C90 770 210 785 275 665 C335 555 450 590 515 465 C575 350 690 375 810 250"/>
-        <path d="M120 900 C120 810 55 755 165 675 C265 602 170 505 305 430 C420 365 355 250 505 180"/>
-        <path d="M0 540 C130 515 85 405 220 350 C355 295 285 180 455 115"/>
+      <svg className="root-net root-net-left" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+        <defs>
+          <filter id="rootBarkLeft" x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015 0.09" numOctaves="3" seed="17" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+            <feGaussianBlur stdDeviation="0.35"/>
+          </filter>
+        </defs>
+        <g className="root-cluster" filter="url(#rootBarkLeft)">
+          <path className="root-main" d="M-90 930 C60 860 90 720 185 645 C280 570 275 450 390 385 C500 320 515 205 690 115 C790 65 875 35 1015 -10"/>
+          <path className="root-main root-main-thin" d="M-70 760 C60 735 118 650 180 560 C240 475 330 460 405 370 C480 278 515 180 625 80"/>
+          <path className="root-main root-main-dark" d="M-40 1015 C30 900 145 870 235 790 C325 705 330 620 455 555 C575 495 620 390 745 325 C840 275 910 200 1015 110"/>
+          <path className="root-branch" d="M185 645 C140 570 80 535 15 520"/>
+          <path className="root-branch" d="M270 560 C235 490 180 448 112 430"/>
+          <path className="root-branch" d="M390 385 C330 332 288 265 265 195"/>
+          <path className="root-branch" d="M500 320 C455 245 455 175 485 105"/>
+          <path className="root-branch" d="M690 115 C670 70 655 30 665 -25"/>
+          <path className="root-fine" d="M235 790 C165 820 125 865 90 925"/>
+          <path className="root-fine" d="M455 555 C402 590 375 635 355 700"/>
+          <path className="root-fine" d="M625 390 C580 350 565 300 575 240"/>
+          <path className="root-fine" d="M745 325 C715 260 725 205 770 145"/>
+          <path className="root-fine" d="M405 370 C380 300 390 240 430 185"/>
+          <path className="root-fine" d="M180 560 C115 595 72 648 38 710"/>
+        </g>
       </svg>
-      <svg className="root-net root-net-right" viewBox="0 0 900 900" preserveAspectRatio="none">
-        <path d="M930 825 C790 745 825 575 650 520 C515 477 590 330 425 282 C285 242 360 92 135 30"/>
-        <path d="M920 675 C805 620 748 650 680 555 C620 475 655 405 535 355 C430 310 400 230 330 120"/>
-        <path d="M865 900 C810 770 690 785 625 665 C565 555 450 590 385 465 C325 350 210 375 90 250"/>
-        <path d="M780 900 C780 810 845 755 735 675 C635 602 730 505 595 430 C480 365 545 250 395 180"/>
-        <path d="M900 540 C770 515 815 405 680 350 C545 295 615 180 445 115"/>
+      <svg className="root-net root-net-right" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+        <defs>
+          <filter id="rootBarkRight" x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.085" numOctaves="3" seed="29" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+            <feGaussianBlur stdDeviation="0.35"/>
+          </filter>
+        </defs>
+        <g className="root-cluster" filter="url(#rootBarkRight)">
+          <path className="root-main" d="M1090 930 C940 860 910 720 815 645 C720 570 725 450 610 385 C500 320 485 205 310 115 C210 65 125 35 -15 -10"/>
+          <path className="root-main root-main-thin" d="M1070 760 C940 735 882 650 820 560 C760 475 670 460 595 370 C520 278 485 180 375 80"/>
+          <path className="root-main root-main-dark" d="M1040 1015 C970 900 855 870 765 790 C675 705 670 620 545 555 C425 495 380 390 255 325 C160 275 90 200 -15 110"/>
+          <path className="root-branch" d="M815 645 C860 570 920 535 985 520"/>
+          <path className="root-branch" d="M730 560 C765 490 820 448 888 430"/>
+          <path className="root-branch" d="M610 385 C670 332 712 265 735 195"/>
+          <path className="root-branch" d="M500 320 C545 245 545 175 515 105"/>
+          <path className="root-branch" d="M310 115 C330 70 345 30 335 -25"/>
+          <path className="root-fine" d="M765 790 C835 820 875 865 910 925"/>
+          <path className="root-fine" d="M545 555 C598 590 625 635 645 700"/>
+          <path className="root-fine" d="M375 390 C420 350 435 300 425 240"/>
+          <path className="root-fine" d="M255 325 C285 260 275 205 230 145"/>
+          <path className="root-fine" d="M595 370 C620 300 610 240 570 185"/>
+          <path className="root-fine" d="M820 560 C885 595 928 648 962 710"/>
+        </g>
       </svg>
       <div className="escape-words">You Tried to Leave</div>
       <div className="escape-flash"/>

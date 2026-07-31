@@ -1,0 +1,12 @@
+HOLLOW VEIL — AMBIENT EMBER FIELD
+
+Added a lightweight global ember layer that appears on the landing page and every interior page.
+
+Behavior:
+- 34 deterministic, tiny ember particles rise slowly from below the viewport.
+- Particles vary subtly in size, brightness, drift, blur, speed, and starting position.
+- The field is pointer-events:none and cannot block buttons, links, navigation, or roster controls.
+- Particle rendering uses CSS transforms and opacity for low overhead.
+- Mobile hides half of the particles to reduce visual and GPU load.
+- prefers-reduced-motion disables the effect entirely.
+- Existing theme, roots transition, roster, navigation, and landing page were not changed.

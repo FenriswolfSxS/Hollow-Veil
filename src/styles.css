@@ -284,3 +284,44 @@
   .no-escape-message{animation:noEscapeReduced 2.4s ease both}
 }
 @keyframes noEscapeReduced{0%,100%{opacity:0}15%,75%{opacity:1}}
+
+/* Subtle ember field shared by the landing page and every interior page. */
+.ambient-embers{
+  position:fixed;
+  z-index:12;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+  contain:strict;
+}
+.ambient-ember{
+  position:absolute;
+  left:var(--ember-x);
+  bottom:-14px;
+  width:var(--ember-size);
+  height:var(--ember-size);
+  border-radius:50%;
+  opacity:0;
+  background:#e55a2b;
+  box-shadow:
+    0 0 3px rgba(255,146,68,.9),
+    0 0 8px rgba(185,43,17,.48);
+  filter:blur(var(--ember-blur));
+  will-change:transform,opacity;
+  animation:ambientEmberRise var(--ember-duration) linear var(--ember-delay) infinite;
+}
+.ambient-ember:nth-child(3n){background:#f0a24d;box-shadow:0 0 3px rgba(255,196,112,.88),0 0 7px rgba(182,68,22,.42)}
+.ambient-ember:nth-child(5n){animation-timing-function:cubic-bezier(.3,.03,.68,.98)}
+@keyframes ambientEmberRise{
+  0%{transform:translate3d(0,3vh,0) scale(.55);opacity:0}
+  9%{opacity:var(--ember-opacity)}
+  38%{transform:translate3d(calc(var(--ember-drift) * .35),-37vh,0) scale(.9);opacity:var(--ember-opacity)}
+  72%{transform:translate3d(calc(var(--ember-drift) * -.22),-73vh,0) scale(.72);opacity:.2}
+  100%{transform:translate3d(var(--ember-drift),-108vh,0) scale(.25);opacity:0}
+}
+@media(max-width:720px){
+  .ambient-ember:nth-child(2n){display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .ambient-embers{display:none}
+}

@@ -325,3 +325,41 @@
 @media(prefers-reduced-motion:reduce){
   .ambient-embers{display:none}
 }
+
+/* Landing-page score. Browsers may wait for the visitor's first interaction before allowing sound. */
+.landing-music-toggle{
+  position:fixed;
+  right:clamp(14px,2vw,30px);
+  top:clamp(14px,2vw,28px);
+  z-index:45;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:42px;
+  padding:9px 14px;
+  border:1px solid rgba(174,136,71,.5);
+  border-radius:999px;
+  color:#cdbb98;
+  background:rgba(5,7,8,.72);
+  box-shadow:0 0 20px rgba(0,0,0,.55),inset 0 0 16px rgba(116,40,31,.08);
+  backdrop-filter:blur(7px);
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:.72rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:border-color .25s ease,color .25s ease,box-shadow .25s ease,opacity .4s ease;
+}
+.landing-music-toggle:hover,
+.landing-music-toggle:focus-visible{
+  color:#f0dfbd;
+  border-color:rgba(188,56,43,.75);
+  box-shadow:0 0 24px rgba(123,29,22,.26),inset 0 0 17px rgba(145,44,32,.12);
+  outline:none;
+}
+.landing-music-toggle.is-playing svg{filter:drop-shadow(0 0 5px rgba(210,154,76,.55));}
+.entrance.is-leaving .landing-music-toggle{opacity:0;pointer-events:none;}
+@media(max-width:640px){
+  .landing-music-toggle{padding:9px 11px;}
+  .landing-music-toggle span{display:none;}
+}

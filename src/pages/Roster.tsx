@@ -1,6 +1,7 @@
 import { Search, ExternalLink, RefreshCw, SlidersHorizontal, Shield, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { identifyJob, loadJobDefinitions, type JobDefinition } from '../jobIconMatcher';
+import { localJobIcon } from '../jobIcons';
 
 type Member={id:string;name:string;rank:string;portrait:string;profileUrl:string;world?:string;job?:string;jobIcon?:string;level?:number;grandCompany?:string};
 type RosterResponse={members?:Member[];cached?:boolean;updatedAt?:number|null;warning?:string};
@@ -71,7 +72,7 @@ export default function Roster(){
         <p className="member-world">{m.world||'World hidden in the mist'}</p>
         <div className="member-stat-grid">
           <div><span><Shield size={14}/>FC Rank</span><strong>{m.rank}</strong></div>
-          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{m.jobIcon&&<img src={m.job?m.jobIcon:`/api/job-icon?url=${encodeURIComponent(m.jobIcon)}`} alt=""/>}{m.job||'Identifying…'}</strong></div>
+          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{(localJobIcon(m.job)||m.jobIcon)&&<img src={localJobIcon(m.job)||`/api/job-icon?url=${encodeURIComponent(m.jobIcon!)}`} alt=""/>}{m.job||'Identifying…'}</strong></div>
           <div><span>Level</span><strong className="level-value">{m.level??'—'}</strong></div>
         </div>
       </div>

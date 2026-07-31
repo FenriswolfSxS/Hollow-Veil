@@ -1,0 +1,11 @@
+Hollow Veil — Root Escape Effect
+
+Clicking the Hollow Veil crest in the navigation now:
+1. Locks the navigation to prevent repeat clicks.
+2. Animates dark tree roots across the screen from both sides.
+3. Reveals “YOU TRIED TO LEAVE.”
+4. Flashes the screen and returns to the landing page.
+5. Shows “THERE IS NO ESCAPE” over the landing artwork, then fades it away.
+
+The existing site theme, landing artwork, roster, job icons, and navigation styling were not changed.
+The effect includes mobile adjustments and a reduced-motion accessibility fallback.

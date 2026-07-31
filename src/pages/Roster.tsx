@@ -72,7 +72,7 @@ export default function Roster(){
         <p className="member-world">{m.world||'World hidden in the mist'}</p>
         <div className="member-stat-grid">
           <div><span><Shield size={14}/>FC Rank</span><strong>{m.rank}</strong></div>
-          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{(localJobIcon(m.job)||m.jobIcon)&&<img src={localJobIcon(m.job)||`/api/job-icon?url=${encodeURIComponent(m.jobIcon!)}`} alt=""/>}{m.job||'Identifying…'}</strong></div>
+          <div><span><Sparkles size={14}/>Current Job</span><strong className="job-value">{m.job&&localJobIcon(m.job)?<img src={localJobIcon(m.job)} alt={`${m.job} job icon`} data-icon-source="local-exact-v2"/>:m.jobIcon?<img src={`/api/job-icon?url=${encodeURIComponent(m.jobIcon)}`} alt="Unresolved Lodestone job icon" data-icon-source="lodestone-fallback"/>:null}{m.job||'Identifying…'}</strong></div>
           <div><span>Level</span><strong className="level-value">{m.level??'—'}</strong></div>
         </div>
       </div>

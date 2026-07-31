@@ -13,6 +13,7 @@ export default function Entrance(){
   const [warning,setWarning]=useState(escaped);
   const [musicEnabled,setMusicEnabled]=useState(()=>localStorage.getItem(MUSIC_KEY)!=='off');
   const [musicPlaying,setMusicPlaying]=useState(false);
+  const LANDING_VOLUME=.85;
 
   useEffect(()=>{
     if(!escaped)return;
@@ -24,10 +25,14 @@ export default function Entrance(){
   useEffect(()=>{
     const audio=audioRef.current;
     if(!audio)return;
-    audio.volume=.32;
+    audio.muted=false;
+    audio.defaultMuted=false;
+    audio.volume=LANDING_VOLUME;
 
     const tryPlay=()=>{
       if(!musicEnabled)return;
+      audio.muted=false;
+      audio.volume=LANDING_VOLUME;
       void audio.play().then(()=>setMusicPlaying(true)).catch(()=>setMusicPlaying(false));
     };
 
@@ -50,15 +55,23 @@ export default function Entrance(){
   const toggleMusic=()=>{
     const audio=audioRef.current;
     if(!audio)return;
-    const next=!musicEnabled;
-    setMusicEnabled(next);
-    localStorage.setItem(MUSIC_KEY,next?'on':'off');
-    if(next){
+
+    // When autoplay was blocked, the first click must start the song instead of
+    // flipping the saved preference to muted. Only an actively playing track
+    // is treated as a request to turn the music off.
+    if(audio.paused || audio.muted || audio.volume===0 || !musicPlaying){
+      setMusicEnabled(true);
+      localStorage.setItem(MUSIC_KEY,'on');
+      audio.muted=false;
+      audio.volume=LANDING_VOLUME;
       void audio.play().then(()=>setMusicPlaying(true)).catch(()=>setMusicPlaying(false));
-    }else{
-      audio.pause();
-      setMusicPlaying(false);
+      return;
     }
+
+    setMusicEnabled(false);
+    localStorage.setItem(MUSIC_KEY,'off');
+    audio.pause();
+    setMusicPlaying(false);
   };
 
   const enter=()=>{
@@ -80,15 +93,19 @@ export default function Entrance(){
       src="/audio/hollow-veil-theme-preview.mp3"
       autoPlay
       loop
+      playsInline
+      muted={false}
       preload="auto"
       onPlay={()=>setMusicPlaying(true)}
       onPause={()=>setMusicPlaying(false)}
+      onVolumeChange={()=>setMusicPlaying(Boolean(audioRef.current && !audioRef.current.paused && !audioRef.current.muted && audioRef.current.volume>0))}
+      onError={()=>setMusicPlaying(false)}
     />
 
     <div className="entrance-atmosphere" aria-hidden="true">
       <span className="entrance-mist entrance-mist-a" />
       <span className="entrance-mist entrance-mist-b" />
-      {Array.from({length:18},(_,i)=><i className={`ember ember-${(i%6)+1}`} key={i} />)}
+      {Array.from({length:36},(_,i)=><i className={`ember ember-${(i%6)+1}`} key={i} />)}
     </div>
 
     <figure className="entrance-frame">
@@ -104,10 +121,10 @@ export default function Entrance(){
       className={`landing-music-toggle${musicPlaying?' is-playing':''}`}
       type="button"
       onClick={toggleMusic}
-      aria-label={musicEnabled?'Mute landing music':'Play landing music'}
-      title={musicEnabled?'Mute music':'Play music'}
+      aria-label={musicPlaying?'Mute landing music':'Play landing music'}
+      title={musicPlaying?'Mute music':'Play music'}
     >
-      {musicEnabled?<Volume2 size={18}/>:<VolumeX size={18}/>}<span>{musicEnabled?'Music':'Muted'}</span>
+      {musicPlaying?<Volume2 size={18}/>:<VolumeX size={18}/>}<span>{musicPlaying?'Music On':'Play Music'}</span>
     </button>
 
     {warning && <div className="no-escape-message" aria-live="polite">There is No Escape</div>}

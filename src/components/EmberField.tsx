@@ -18,7 +18,7 @@ function seededValue(seed: number) {
 }
 
 export default function EmberField() {
-  const embers = useMemo(() => Array.from({ length: 34 }, (_, index) => {
+  const embers = useMemo(() => Array.from({ length: 72 }, (_, index) => {
     const x = seededValue(index + 1) * 100;
     const size = 1.1 + seededValue(index + 41) * 2.5;
     const duration = 10 + seededValue(index + 81) * 13;

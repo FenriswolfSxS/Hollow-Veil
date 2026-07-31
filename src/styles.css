@@ -320,7 +320,7 @@
   100%{transform:translate3d(var(--ember-drift),-108vh,0) scale(.25);opacity:0}
 }
 @media(max-width:720px){
-  .ambient-ember:nth-child(2n){display:none}
+  .ambient-ember:nth-child(3n){display:none}
 }
 @media(prefers-reduced-motion:reduce){
   .ambient-embers{display:none}

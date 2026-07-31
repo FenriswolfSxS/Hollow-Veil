@@ -1,0 +1,9 @@
+Hollow Veil audio and ember adjustment
+
+- Re-encoded and loudness-normalized the landing track to approximately -14 LUFS.
+- Increased landing playback volume from 32% to 85%.
+- Explicitly clears muted/defaultMuted before playback and on user interaction.
+- Added playsInline, audio error handling, and true playback-state tracking.
+- Doubled the shared ambient ember field from 34 to 72 particles.
+- Doubled the landing-only ember layer from 18 to 36 particles.
+- Mobile now hides only every third ambient ember instead of every second.

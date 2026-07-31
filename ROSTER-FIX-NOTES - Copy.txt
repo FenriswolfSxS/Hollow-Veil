@@ -1,0 +1,12 @@
+Hollow Veil roster repair
+
+- Built from the user-supplied last working version.
+- Added all supplied job icons locally under public/job-icons.
+- FC rank and level are parsed from each exact Lodestone roster row.
+- Current job is resolved in this order:
+  1. Text/metadata on the active job icon in the same roster row.
+  2. Official ClassJob numeric ID embedded in the icon URL/class.
+  3. Active job banner on the member's official Lodestone profile.
+- The full class/job list is never used to guess the active job.
+- Local icons are selected by verified job name, so a Reaper cannot display a Blacksmith icon.
+- Cache schema bumped to 7 so older incomplete data is discarded.

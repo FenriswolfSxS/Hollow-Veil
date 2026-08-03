@@ -1,8 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { CalendarDays, Home, LogIn, Menu, Shield, UserRound, Users, X } from 'lucide-react';
+import { CalendarDays, Home, LogIn, Menu, MessageCircle, MessagesSquare, Shield, ShieldCheck, UserRound, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-type Me = { authenticated: boolean; user?: { username: string; avatarUrl: string; role: string } };
+type Me = { authenticated: boolean; user?: { username: string; avatarUrl: string; rank: string; role: string } };
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
@@ -17,20 +17,36 @@ export default function Layout() {
     window.setTimeout(() => navigate('/', { state: { escaped: true } }), 3200);
   };
   const links = [
-    ['/home', 'Home', Home], ['/roster', 'Roster', Users], ['/events', 'Events', CalendarDays], ['/profile', 'Profile', UserRound],
+    ['/home', 'Home', Home], ['/roster', 'Roster', Users], ['/events', 'Events', CalendarDays], ['/forum', 'Forum', MessagesSquare],
   ] as const;
+  const openDiscord = async () => {
+    setOpen(false);
+    try {
+      const response = await fetch('/api/discord-invite');
+      const data = await response.json() as { url?: string; error?: string };
+      if (!response.ok || !data.url) throw new Error(data.error || 'Discord invitation is unavailable.');
+      window.location.assign(data.url);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Discord invitation is unavailable.');
+    }
+  };
   return <div className={`site-shell${returning ? ' is-returning' : ''}`}>
     <div className="mist mist-a"/><div className="mist mist-b"/>
     <button className="nav-toggle" onClick={() => setOpen(v => !v)} aria-label="Toggle navigation">{open ? <X/> : <Menu/>}</button>
     <aside className={`shrine-nav ${open ? 'open' : ''}`}>
       <button className="nav-crest" type="button" onClick={returnToVeil} disabled={returning} aria-label="Return to the Hollow Veil landing page"><span>虚紗</span><small>HOLLOW VEIL</small></button>
-      <nav>{links.map(([to,label,Icon]) => <NavLink key={to} to={to} onClick={() => setOpen(false)}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
+      <nav>
+        {links.map(([to,label,Icon]) => <NavLink key={to} to={to} onClick={() => setOpen(false)}><Icon size={18}/><span>{label}</span></NavLink>)}
+        {me.authenticated && <button className="nav-discord-link" type="button" onClick={openDiscord}><MessageCircle size={18}/><span>Discord</span></button>}
+        <NavLink to="/profile" onClick={() => setOpen(false)}><UserRound size={18}/><span>Profile</span></NavLink>
+        {me.authenticated && ['Warden','Veilkeeper','Watcher'].includes(me.user?.rank||'') && <NavLink to="/admin" onClick={() => setOpen(false)}><ShieldCheck size={18}/><span>Admin</span></NavLink>}
+      </nav>
       <div className="account-card">
         {me.authenticated && me.user ? <>
           <img src={me.user.avatarUrl} alt="Profile" />
-          <div><strong>{me.user.username}</strong><small>{me.user.role}</small></div>
+          <div><strong>{me.user.username}</strong><small>{me.user.rank}</small></div>
           <a className="icon-link" href="/api/auth/logout" title="Log out"><Shield size={18}/></a>
-        </> : <a className="login-link" href="/api/auth/discord"><LogIn size={18}/> Enter the Veil</a>}
+        </> : <NavLink className="login-link" to="/login" onClick={() => setOpen(false)}><LogIn size={18}/> Enter the Veil</NavLink>}
       </div>
     </aside>
     <main className="site-main"><Outlet /></main>

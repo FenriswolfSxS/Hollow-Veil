@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Volume2, VolumeX } from 'lucide-react';
-
-const MUSIC_KEY='hollow-veil-landing-music';
+import { useGlobalMusic } from '../components/GlobalMusic';
+import { useRitual } from '../ritual/RitualContext';
+import RitualScene from '../ritual/RitualScene';
 
 export default function Entrance(){
   const nav=useNavigate();
   const location=useLocation();
   const escaped=Boolean((location.state as {escaped?: boolean}|null)?.escaped);
-  const audioRef=useRef<HTMLAudioElement>(null);
   const [leaving,setLeaving]=useState(false);
   const [warning,setWarning]=useState(escaped);
-  const [musicEnabled,setMusicEnabled]=useState(()=>localStorage.getItem(MUSIC_KEY)!=='off');
-  const [musicPlaying,setMusicPlaying]=useState(false);
-  const LANDING_VOLUME=.85;
+  const { musicPlaying, toggleMusic, requestPlay } = useGlobalMusic();
+  const { guttering, shaking, sealed } = useRitual();
+  const entranceRef=useRef<HTMLElement>(null);
+  const artRef=useRef<HTMLImageElement>(null);
 
   useEffect(()=>{
     if(!escaped)return;
@@ -22,85 +23,23 @@ export default function Entrance(){
     return()=>window.clearTimeout(timer);
   },[escaped]);
 
-  useEffect(()=>{
-    const audio=audioRef.current;
-    if(!audio)return;
-    audio.muted=false;
-    audio.defaultMuted=false;
-    audio.volume=LANDING_VOLUME;
 
-    const tryPlay=()=>{
-      if(!musicEnabled)return;
-      audio.muted=false;
-      audio.volume=LANDING_VOLUME;
-      void audio.play().then(()=>setMusicPlaying(true)).catch(()=>setMusicPlaying(false));
-    };
-
-    tryPlay();
-    const unlock=()=>{
-      tryPlay();
-      window.removeEventListener('pointerdown',unlock);
-      window.removeEventListener('keydown',unlock);
-    };
-    window.addEventListener('pointerdown',unlock,{once:true});
-    window.addEventListener('keydown',unlock,{once:true});
-
-    return()=>{
-      window.removeEventListener('pointerdown',unlock);
-      window.removeEventListener('keydown',unlock);
-      audio.pause();
-    };
-  },[musicEnabled]);
-
-  const toggleMusic=()=>{
-    const audio=audioRef.current;
-    if(!audio)return;
-
-    // When autoplay was blocked, the first click must start the song instead of
-    // flipping the saved preference to muted. Only an actively playing track
-    // is treated as a request to turn the music off.
-    if(audio.paused || audio.muted || audio.volume===0 || !musicPlaying){
-      setMusicEnabled(true);
-      localStorage.setItem(MUSIC_KEY,'on');
-      audio.muted=false;
-      audio.volume=LANDING_VOLUME;
-      void audio.play().then(()=>setMusicPlaying(true)).catch(()=>setMusicPlaying(false));
-      return;
-    }
-
-    setMusicEnabled(false);
-    localStorage.setItem(MUSIC_KEY,'off');
-    audio.pause();
-    setMusicPlaying(false);
-  };
+  useEffect(()=>{ requestPlay(); },[requestPlay]);
 
   const enter=()=>{
-    if(leaving)return;
+    if(leaving||sealed)return;
     setLeaving(true);
-    const audio=audioRef.current;
-    if(audio && !audio.paused){
-      const fade=window.setInterval(()=>{
-        audio.volume=Math.max(0,audio.volume-.04);
-        if(audio.volume<=0){window.clearInterval(fade);audio.pause();}
-      },100);
-    }
     window.setTimeout(()=>nav('/home'),2200);
   };
 
-  return <main className={`entrance${leaving?' is-leaving':''}${warning?' has-warning':''}`} aria-label="Hollow Veil entrance">
-    <audio
-      ref={audioRef}
-      src="/audio/hollow-veil-theme-preview.mp3"
-      autoPlay
-      loop
-      playsInline
-      muted={false}
-      preload="auto"
-      onPlay={()=>setMusicPlaying(true)}
-      onPause={()=>setMusicPlaying(false)}
-      onVolumeChange={()=>setMusicPlaying(Boolean(audioRef.current && !audioRef.current.paused && !audioRef.current.muted && audioRef.current.volume>0))}
-      onError={()=>setMusicPlaying(false)}
-    />
+  const classes=['entrance'];
+  if(leaving)classes.push('is-leaving');
+  if(warning)classes.push('has-warning');
+  if(guttering)classes.push('is-guttering');
+  if(shaking)classes.push('is-shaking');
+  if(sealed)classes.push('is-sealed');
+
+  return <main ref={entranceRef} className={classes.join(' ')} aria-label="Hollow Veil entrance">
 
     <div className="entrance-atmosphere" aria-hidden="true">
       <span className="entrance-mist entrance-mist-a" />
@@ -109,11 +48,14 @@ export default function Entrance(){
     </div>
 
     <figure className="entrance-frame">
-      <img src="/hollow-veil-entrance.png" alt="Hollow Veil Free Company story artwork" />
+      <img ref={artRef} src="/hollow-veil-entrance.png" alt="Hollow Veil Free Company story artwork" />
       <span className="frame-glow" aria-hidden="true" />
     </figure>
 
-    <button className="enter-button" onClick={enter} disabled={leaving} aria-label="Walk not far where the shadows veil">
+    {/* The litany, and everything that answers it. */}
+    <RitualScene imageRef={artRef} containerRef={entranceRef} />
+
+    <button className="enter-button" onClick={enter} disabled={leaving||sealed} aria-label="Walk not far where the shadows veil">
       <span>Walk not far where the shadows veil</span>
     </button>
 

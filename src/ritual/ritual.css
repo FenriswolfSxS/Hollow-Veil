@@ -1,0 +1,841 @@
+/* ==========================================================================
+   The Hollow Veil — the litany, and what answers it.
+
+   Read the four lines in order and the forest opens. Read them out of order
+   and it turns away. Everything below is that, in layers:
+
+     1. tokens
+     2. the scene      — anchored to the painted artwork (crest, lines, wraiths, fog)
+     3. the stage      — fixed to the viewport (flashes, blackout, eyes, the song)
+     4. the movements  — ten passages across the hidden song's 4:58
+     5. embers, freezing, reduced motion
+   ========================================================================== */
+
+:root {
+  --veil-blood: #d8261c;
+  --veil-blood-deep: #8c1d16;
+  --veil-bone: #ece0c6;
+  --veil-eye: #f6eeda;
+  --veil-eye-warm: #ffcf8e;
+
+  /* Written every frame from the hidden song's own low end. */
+  --veil-beat: 0;
+  --veil-surge: 0;
+}
+
+/* ==========================================================================
+   2. THE SCENE — pinned to the painted artwork, not the window
+   ========================================================================== */
+
+.veil-scene {
+  position: absolute;
+  left: var(--art-l);
+  top: var(--art-t);
+  width: var(--art-w);
+  height: var(--art-h);
+  /* Deliberately no z-index. A stacking context here would cut the relight layer off
+     from the artwork it needs to blend with; .entrance already isolates the blending. */
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+
+.veil-scene.is-sealed {
+  opacity: 0;
+}
+
+/* --- the litany, which is paint, not markup ------------------------------
+
+   The four lines live in the artwork itself. To light one up we lay a crop of
+   that same artwork back over the words and screen it — dark pixels stay dark,
+   the crimson text blazes. Nothing is redrawn, only relit.
+   ------------------------------------------------------------------------- */
+
+.veil-glows,
+.veil-hits {
+  position: absolute;
+  inset: 0;
+}
+
+.veil-hits { pointer-events: none; }
+
+.veil-glow-pair { display: contents; }
+
+.veil-bloom,
+.veil-glow,
+.veil-hit {
+  position: absolute;
+  left: calc(var(--l) * 100%);
+  top: calc(var(--t) * 100%);
+  width: calc(var(--w) * 100%);
+  height: calc(var(--h) * 100%);
+}
+
+.veil-glow {
+  background-image: url("/hollow-veil-entrance.png");
+  background-size: var(--art-w) var(--art-h);
+  background-position: calc(var(--art-w) * var(--l) * -1) calc(var(--art-h) * var(--t) * -1);
+  mix-blend-mode: screen;
+  filter: brightness(2.15) saturate(1.55) contrast(1.06);
+  /* Feathered edges. Without this the relit rectangle shows its own border against
+     the near-black story column; with it, the light has no shape but the words. */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 26%, #000 74%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 26%, #000 74%, transparent 100%);
+  mask-composite: intersect;
+  opacity: 0;
+  transition: opacity 0.75s ease;
+}
+
+/* Bloom around the words, so the light spills off the letterforms rather than
+   stopping at them. Unmasked, and drawn under the relight. */
+.veil-bloom {
+  background: radial-gradient(ellipse at center, rgba(226, 44, 30, 0.42), transparent 66%);
+  transform: scale(1.04, 2.4);
+  filter: blur(5px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.75s ease;
+}
+
+.veil-bloom.is-lit {
+  opacity: 1;
+  animation: veilBloomLit 3.6s ease-in-out infinite;
+}
+
+.veil-bloom.is-wrong {
+  opacity: 1;
+  animation: veilBloomWrong 0.95s ease-out 2;
+}
+
+@keyframes veilBloomLit {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+@keyframes veilBloomWrong {
+  0% { opacity: 1; filter: blur(7px) hue-rotate(-10deg) brightness(1.7); }
+  100% { opacity: 0; filter: blur(5px); }
+}
+
+.veil-glow.is-lit {
+  opacity: 1;
+  animation: veilLineLit 3.6s ease-in-out infinite;
+}
+
+@keyframes veilLineLit {
+  0%, 100% { filter: brightness(2.05) saturate(1.5) contrast(1.06); }
+  50% { filter: brightness(2.85) saturate(1.75) contrast(1.1); }
+}
+
+/* Wrong line. The forest turns away. */
+.veil-glow.is-wrong {
+  opacity: 1;
+  animation: veilLineWrong 0.95s ease-out 2;
+}
+
+@keyframes veilLineWrong {
+  0% { filter: brightness(4.2) saturate(2.4) hue-rotate(-8deg); }
+  35% { filter: brightness(1.6) saturate(1.8); }
+  100% { filter: brightness(1) saturate(1); opacity: 0; }
+}
+
+/* Invisible targets, sitting exactly on the words. */
+.veil-hit {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+  appearance: none;
+}
+
+.veil-hit-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Barely there — enough to reward a wandering cursor, not enough to give it away. */
+.veil-hit::after {
+  content: "";
+  position: absolute;
+  inset: -60% -3%;
+  background: radial-gradient(ellipse at center, rgba(226, 44, 30, 0.26), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.veil-hit:hover::after { opacity: 1; }
+
+.veil-hit:focus-visible {
+  outline: 1px solid rgba(226, 60, 46, 0.75);
+  outline-offset: 3px;
+}
+
+.veil-hit:disabled { cursor: default; }
+.veil-hit:disabled::after { opacity: 0; }
+
+/* The phone fallback — hidden on anything wide enough to read the artwork. */
+.veil-small-lines { display: none; }
+
+/* --- the moon looks away ------------------------------------------------- */
+
+.veil-moonshroud {
+  position: absolute;
+  left: 66%;
+  top: 24%;
+  width: 30%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(2, 3, 4, 0.95) 0 26%, rgba(2, 3, 4, 0.74) 44%, rgba(2, 3, 4, 0) 72%);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.veil-scene.is-dimming .veil-moonshroud {
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+/* --- what steps out of the treeline -------------------------------------- */
+
+.veil-wraiths {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1.8s ease, visibility 0s linear 1.8s;
+}
+
+.veil-scene.has-figures .veil-wraiths {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1.8s ease, visibility 0s;
+}
+
+.veil-wraith {
+  position: absolute;
+  width: auto;
+  transform-origin: 50% 100%;
+  scale: var(--wraith-flip) 1;
+  opacity: 0;
+  filter: blur(var(--wraith-blur));
+  animation:
+    veilWraithRise 2.6s var(--wraith-delay) cubic-bezier(0.19, 0.72, 0.3, 1) both,
+    veilWraithBreathe 11s calc(var(--wraith-delay) + 2.6s) ease-in-out infinite;
+}
+
+@keyframes veilWraithRise {
+  from { opacity: 0; translate: -50% 16%; }
+  to { opacity: var(--wraith-opacity); translate: -50% 0; }
+}
+
+@keyframes veilWraithBreathe {
+  0%, 100% { opacity: var(--wraith-opacity); }
+  50% { opacity: calc(var(--wraith-opacity) * 0.55); }
+}
+
+/* Lesser things — only ever a pair of eyes. */
+.veil-watcher {
+  position: absolute;
+  width: calc(var(--art-w) * 0.017);
+  height: calc(var(--art-w) * 0.0046);
+  translate: -50% 0;
+  scale: var(--watcher-scale);
+  opacity: 0;
+  animation:
+    veilWatcherWake 2.2s var(--watcher-delay) ease both,
+    veilWatcherBlink var(--watcher-blink) calc(var(--watcher-delay) + 2.2s) linear infinite;
+}
+
+.veil-watcher::before,
+.veil-watcher::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 36%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--veil-eye);
+  box-shadow: 0 0 5px 1px rgba(246, 238, 218, 0.8), 0 0 14px 3px rgba(206, 116, 44, 0.3);
+}
+
+.veil-watcher::before { left: 0; }
+.veil-watcher::after { right: 0; }
+
+@keyframes veilWatcherWake {
+  from { opacity: 0; }
+  to { opacity: 0.78; }
+}
+
+@keyframes veilWatcherBlink {
+  0%, 91%, 100% { opacity: 0.78; }
+  93%, 96% { opacity: 0; }
+}
+
+/* --- cold off the ground ------------------------------------------------- */
+
+.veil-fog {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  bottom: 0;
+  height: 48%;
+  overflow: hidden;
+  opacity: 0;
+  translate: 0 26%;
+  transition: opacity 2.6s ease, translate 3.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.veil-scene.has-fog .veil-fog {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.veil-fog-bank {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  background:
+    radial-gradient(ellipse 34% 74% at 14% 100%, rgba(184, 202, 210, 0.2), transparent 70%),
+    radial-gradient(ellipse 30% 66% at 42% 100%, rgba(168, 188, 198, 0.17), transparent 72%),
+    radial-gradient(ellipse 38% 80% at 72% 100%, rgba(192, 208, 216, 0.15), transparent 70%);
+  animation: veilFogDrift linear infinite;
+}
+
+.veil-fog-a { height: 52%; filter: blur(16px); animation-duration: 54s; opacity: 0.95; }
+.veil-fog-b { height: 74%; filter: blur(26px); animation-duration: 78s; animation-direction: reverse; opacity: 0.7; }
+.veil-fog-c { height: 100%; filter: blur(38px); animation-duration: 104s; opacity: 0.45; }
+
+@keyframes veilFogDrift {
+  from { translate: 0 0; }
+  to { translate: -50% 0; }
+}
+
+/* ==========================================================================
+   3. THE STAGE — fixed to the window
+   ========================================================================== */
+
+.veil-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  contain: layout paint;
+}
+
+.veil-stage > * {
+  position: absolute;
+  pointer-events: none;
+}
+
+.veil-stage.is-sealed {
+  pointer-events: auto;
+}
+
+/* Each answered line pulls more light out of the room. */
+.vs-gloom {
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 44%, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0.88) 76%);
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+.veil-stage[data-progress="1"] .vs-gloom { opacity: 0.2; }
+.veil-stage[data-progress="2"] .vs-gloom { opacity: 0.5; }
+.veil-stage[data-progress="3"] .vs-gloom { opacity: 0.66; }
+
+/* Light stutters on the second line. */
+.vs-flash {
+  inset: 0;
+  background: #c9d4d9;
+  opacity: 0;
+}
+
+.veil-stage.is-flashing .vs-flash {
+  animation: veilFlash 1.9s linear 1;
+}
+
+@keyframes veilFlash {
+  0%, 100% { opacity: 0; }
+  2% { opacity: 0.82; }
+  5% { opacity: 0; }
+  10% { opacity: 0.55; }
+  13% { opacity: 0; }
+  25% { opacity: 0.88; }
+  29% { opacity: 0; }
+  43% { opacity: 0.44; }
+  47% { opacity: 0; }
+  68% { opacity: 0.7; }
+  73% { opacity: 0; }
+}
+
+/* Absolute black. Nothing behind this. */
+.vs-void {
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+.veil-stage.is-sealed .vs-void { opacity: 1; }
+
+.veil-stage[data-phase="returning"] {
+  animation: veilReturn 3.4s ease forwards;
+}
+
+@keyframes veilReturn {
+  0% { opacity: 1; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- haunting eyes ------------------------------------------------------- */
+
+.vs-eyes {
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 2.8s ease, visibility 0s linear 2.8s;
+}
+
+.veil-stage.is-sealed .vs-eyes {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 2.8s ease 0.75s, visibility 0s;
+}
+
+.vs-eye {
+  position: absolute;
+  width: clamp(14px, 1.5vw, 26px);
+  height: clamp(4px, 0.42vw, 7px);
+  translate: -50% -50%;
+  scale: var(--eye-scale);
+  rotate: var(--eye-tilt);
+  opacity: 0;
+  animation:
+    veilEyeOpen 2.4s var(--eye-delay) ease both,
+    veilEyeBlink var(--eye-blink) calc(var(--eye-delay) + 2.4s) linear infinite;
+}
+
+.vs-eye::before,
+.vs-eye::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 36%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--veil-eye);
+  box-shadow: 0 0 6px 1px rgba(246, 238, 218, 0.85), 0 0 18px 4px rgba(198, 108, 40, 0.32);
+}
+
+.vs-eye::before { left: 0; }
+.vs-eye::after { right: 0; }
+
+.vs-eye.is-warm::before,
+.vs-eye.is-warm::after {
+  background: var(--veil-eye-warm);
+  box-shadow: 0 0 7px 1px rgba(255, 207, 142, 0.85), 0 0 20px 5px rgba(206, 78, 22, 0.4);
+}
+
+@keyframes veilEyeOpen {
+  from { opacity: 0; }
+  to { opacity: 0.9; }
+}
+
+@keyframes veilEyeBlink {
+  0%, 88%, 100% { opacity: 0.9; }
+  90%, 94% { opacity: 0.04; }
+}
+
+/* --- the proclamation ---------------------------------------------------- */
+
+.vs-proclaim {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(88vw, 940px);
+  margin: 0;
+  text-align: center;
+  font-family: Cinzel, serif;
+  font-weight: 500;
+  font-size: clamp(18px, 3.5vw, 46px);
+  line-height: 1.35;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e5382b;
+  text-shadow: 0 0 26px rgba(160, 20, 14, 0.75), 0 0 70px rgba(120, 12, 8, 0.5);
+  opacity: 0;
+  transition: opacity 2.2s ease;
+}
+
+.veil-stage[data-phase="proclaim"] .vs-proclaim { opacity: 1; }
+.veil-stage[data-phase="song"] .vs-proclaim { opacity: 0.9; }
+
+/* --- the way out --------------------------------------------------------- */
+
+.vs-exit {
+  left: 50%;
+  bottom: 3.2vh;
+  translate: -50% 0;
+  padding: 10px 20px;
+  border: 0;
+  background: transparent;
+  font-family: Cinzel, serif;
+  font-size: clamp(9px, 1vw, 12px);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(180, 166, 142, 0.34);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 1.6s ease, color 0.3s ease;
+}
+
+.veil-stage.is-sealed .vs-exit {
+  pointer-events: auto;
+  animation: veilExitHint 14s 6s ease both;
+}
+
+.vs-exit:hover,
+.vs-exit:focus-visible {
+  color: rgba(228, 214, 188, 0.85);
+  outline: none;
+}
+
+@keyframes veilExitHint {
+  0% { opacity: 0; }
+  12%, 62% { opacity: 1; }
+  100% { opacity: 0.16; }
+}
+
+/* ==========================================================================
+   4. THE MOVEMENTS — ten passages across the hidden song
+   Layers below are dark until a movement calls for them, and every intensity
+   is multiplied by --veil-beat, read live off the song's own low end.
+   ========================================================================== */
+
+.vs-mist,
+.vs-tree,
+.vs-march,
+.vs-crimson,
+.vs-scan,
+.vs-grain {
+  inset: 0;
+  opacity: 0;
+  transition: opacity 4s ease;
+}
+
+/* Fog, but taller and slower than the one on the ground. */
+.vs-mist {
+  background:
+    radial-gradient(ellipse 60% 42% at 22% 108%, rgba(150, 172, 182, 0.3), transparent 72%),
+    radial-gradient(ellipse 54% 36% at 74% 112%, rgba(132, 156, 168, 0.26), transparent 74%);
+  filter: blur(28px);
+  animation: veilMistRoll 46s ease-in-out infinite alternate;
+}
+
+@keyframes veilMistRoll {
+  from { translate: -6vw 4vh; scale: 1; }
+  to { translate: 7vw -2vh; scale: 1.18; }
+}
+
+/* The artwork returns, drained of everything but shape. */
+.vs-tree {
+  background: url("/hollow-veil-entrance.png") center / cover no-repeat;
+  filter: grayscale(1) brightness(0.32) contrast(1.7);
+  animation: veilTreeCreep 70s ease-in-out infinite alternate;
+}
+
+@keyframes veilTreeCreep {
+  from { scale: 1.04; }
+  to { scale: 1.19; }
+}
+
+/* Things that walk past. */
+.vs-march { overflow: hidden; }
+
+.vs-marcher {
+  position: absolute;
+  width: auto;
+  left: 0;
+  scale: var(--march-flip) 1;
+  filter: blur(var(--march-blur));
+  opacity: var(--march-opacity);
+  animation: veilMarch var(--march-duration) linear var(--march-delay) infinite;
+}
+
+@keyframes veilMarch {
+  from { translate: -20vw 0; }
+  to { translate: 118vw 0; }
+}
+
+/* Red flood, pulsed by the bass. */
+.vs-crimson {
+  background: radial-gradient(ellipse at 50% 58%, rgba(196, 26, 16, 0.62) 0, rgba(70, 6, 4, 0.5) 46%, rgba(0, 0, 0, 0.9) 82%);
+  mix-blend-mode: screen;
+}
+
+/* Interference. */
+.vs-scan {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.07) 0 1px,
+    transparent 1px 4px
+  );
+  mix-blend-mode: screen;
+}
+
+.vs-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: screen;
+  animation: veilGrainShift 0.7s steps(3) infinite;
+}
+
+@keyframes veilGrainShift {
+  0% { translate: 0 0; }
+  33% { translate: -14px 9px; }
+  66% { translate: 11px -12px; }
+  100% { translate: 0 0; }
+}
+
+/* --- movement wiring ----------------------------------------------------- */
+
+/* awaken — nothing but eyes, and the words hanging there */
+.veil-stage[data-movement="awaken"] .vs-eyes { filter: brightness(0.75); }
+
+/* breath — mist comes up, the shape of the forest surfaces behind it */
+.veil-stage[data-movement="breath"] .vs-mist { opacity: 0.55; }
+.veil-stage[data-movement="breath"] .vs-tree { opacity: 0.16; }
+
+/* procession — things walk past, close and far */
+.veil-stage[data-movement="procession"] .vs-mist { opacity: 0.45; }
+.veil-stage[data-movement="procession"] .vs-march { opacity: 1; }
+.veil-stage[data-movement="procession"] .vs-tree { opacity: 0.1; }
+
+/* descent — the forest itself, drained and creeping closer */
+.veil-stage[data-movement="descent"] .vs-tree { opacity: 0.46; }
+.veil-stage[data-movement="descent"] .vs-grain { opacity: 0.24; }
+.veil-stage[data-movement="descent"] .vs-mist { opacity: 0.3; }
+
+/* swarm — every eye at once */
+.veil-stage[data-movement="swarm"] .vs-eyes {
+  filter: brightness(calc(1.1 + var(--veil-beat) * 1.5));
+  scale: calc(1 + var(--veil-beat) * 0.045);
+}
+.veil-stage[data-movement="swarm"] .vs-mist { opacity: 0.2; }
+
+/* fracture — the picture stops holding together */
+.veil-stage[data-movement="fracture"] .vs-scan { opacity: calc(0.5 + var(--veil-beat) * 0.5); }
+.veil-stage[data-movement="fracture"] .vs-grain { opacity: calc(0.3 + var(--veil-beat) * 0.45); }
+.veil-stage[data-movement="fracture"] .vs-tree { opacity: 0.3; }
+.veil-stage[data-movement="fracture"] .vs-eyes {
+  translate: calc(var(--veil-beat) * 14px - 7px) calc(var(--veil-beat) * -8px + 4px);
+  filter: brightness(calc(1 + var(--veil-beat)));
+}
+
+/* crimson — red, on the beat */
+.veil-stage[data-movement="crimson"] .vs-crimson { opacity: calc(0.16 + var(--veil-beat) * 0.62); }
+.veil-stage[data-movement="crimson"] .vs-march { opacity: 0.9; }
+.veil-stage[data-movement="crimson"] .vs-grain { opacity: 0.18; }
+.veil-stage[data-movement="crimson"] .vs-eyes { filter: brightness(calc(0.8 + var(--veil-beat) * 0.8)); }
+
+/* hollow — almost nothing, and one thing coming */
+.veil-stage[data-movement="hollow"] .vs-eyes { opacity: 0.18; }
+
+/* veil — all of it, together */
+.veil-stage[data-movement="veil"] .vs-mist { opacity: calc(0.4 + var(--veil-surge) * 0.4); }
+.veil-stage[data-movement="veil"] .vs-march { opacity: 1; }
+.veil-stage[data-movement="veil"] .vs-tree { opacity: 0.24; }
+.veil-stage[data-movement="veil"] .vs-crimson { opacity: calc(0.08 + var(--veil-beat) * 0.42); }
+.veil-stage[data-movement="veil"] .vs-grain { opacity: 0.22; }
+.veil-stage[data-movement="veil"] .vs-eyes {
+  filter: brightness(calc(1.15 + var(--veil-beat) * 1.3));
+  scale: calc(1 + var(--veil-beat) * 0.03);
+}
+
+/* dissolve — it lets go */
+.veil-stage[data-movement="dissolve"] .vs-mist { opacity: 0.22; }
+.veil-stage[data-movement="dissolve"] .vs-eyes { opacity: 0.28; filter: brightness(0.6); }
+.veil-stage[data-movement="dissolve"] .vs-tree { opacity: 0.06; }
+
+/* Movement layers only exist while the song is actually playing. */
+.veil-stage:not([data-phase="song"]) .vs-mist,
+.veil-stage:not([data-phase="song"]) .vs-tree,
+.veil-stage:not([data-phase="song"]) .vs-march,
+.veil-stage:not([data-phase="song"]) .vs-crimson,
+.veil-stage:not([data-phase="song"]) .vs-scan,
+.veil-stage:not([data-phase="song"]) .vs-grain {
+  opacity: 0 !important;
+}
+
+/* ==========================================================================
+   5. EMBERS, FREEZING, THE FAILED SEQUENCE
+   ========================================================================== */
+
+/* Embers gutter out on the first line, then catch again slowly. */
+.ambient-embers { transition: opacity 1.8s ease; }
+.ambient-embers.is-guttering { opacity: 0; transition: opacity 0.45s cubic-bezier(0.4, 0, 1, 1); }
+
+.entrance-atmosphere { transition: opacity 1.8s ease; }
+.entrance.is-guttering .entrance-atmosphere { opacity: 0; transition: opacity 0.45s cubic-bezier(0.4, 0, 1, 1); }
+
+/* On the fourth line everything stops: embers out, every animation held still. */
+body[data-veil-frozen="1"] .ambient-embers { opacity: 0; transition: opacity 0.5s ease; }
+body[data-veil-frozen="1"] .ambient-embers .ambient-ember,
+body[data-veil-frozen="1"] .entrance,
+body[data-veil-frozen="1"] .entrance * {
+  animation-play-state: paused !important;
+}
+
+/* Wrong line: the screen takes a hit. */
+.entrance.is-shaking { animation: veilShake 0.62s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+@keyframes veilShake {
+  0%, 100% { translate: 0 0; }
+  10% { translate: -9px 4px; }
+  22% { translate: 8px -6px; }
+  34% { translate: -12px -3px; }
+  46% { translate: 10px 5px; }
+  58% { translate: -6px -4px; }
+  70% { translate: 5px 3px; }
+  84% { translate: -3px -1px; }
+}
+
+/* The enter button steps aside while the forest is listening. */
+.entrance.is-sealed .enter-button,
+.entrance.is-sealed .landing-music-toggle {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+/* ==========================================================================
+   NARROW SCREENS
+   Under 760px the artwork renders about 240px tall, which puts the painted
+   litany at roughly six pixels a line — unreadable, and far below any usable
+   tap target. There the hotspots stand down and the four lines are repeated
+   beneath the artwork, set to match the paint they stand in for.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  .veil-hits,
+  .veil-glows { display: none; }
+
+  .veil-scene {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .veil-small-lines {
+    position: absolute;
+    left: 50%;
+    bottom: 11%;
+    width: min(94%, 440px);
+    translate: -50% 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+    text-align: center;
+    pointer-events: auto;
+  }
+
+  .veil-small-line {
+    display: block;
+    width: 100%;
+    min-height: 34px;
+    padding: 0.45em 0.5em;
+    border: 0;
+    background: transparent;
+    font-family: Cinzel, serif;
+    font-weight: 500;
+    font-size: clamp(11px, 3.3vw, 15px);
+    letter-spacing: 0.07em;
+    line-height: 1.25;
+    text-transform: uppercase;
+    color: rgba(202, 46, 34, 0.86);
+    text-shadow: 0 0 12px rgba(122, 16, 11, 0.5), 0 1px 2px rgba(0, 0, 0, 0.95);
+    cursor: pointer;
+    transition: color 0.45s ease, text-shadow 0.45s ease, background 0.45s ease;
+  }
+
+  .veil-small-line.is-lit {
+    color: #ff6a58;
+    background: linear-gradient(90deg, transparent, rgba(126, 21, 15, 0.42), transparent);
+    text-shadow: 0 0 12px rgba(255, 118, 98, 0.8), 0 0 34px rgba(190, 30, 20, 0.55);
+    animation: veilSmallLit 3.6s ease-in-out infinite;
+  }
+
+  .veil-small-line.is-wrong { animation: veilSmallWrong 0.95s ease-out 2; }
+
+  @keyframes veilSmallLit {
+    0%, 100% { text-shadow: 0 0 12px rgba(255, 118, 98, 0.7), 0 0 34px rgba(190, 30, 20, 0.5); }
+    50% { text-shadow: 0 0 18px rgba(255, 146, 128, 0.95), 0 0 52px rgba(214, 40, 26, 0.72); }
+  }
+
+  @keyframes veilSmallWrong {
+    0% { color: #fff0ec; background: rgba(190, 26, 18, 0.66); text-shadow: 0 0 30px rgba(255, 70, 50, 0.95); }
+    35% { color: #ff3a26; background: rgba(150, 18, 12, 0.26); }
+    100% { color: rgba(202, 46, 34, 0.86); background: transparent; }
+  }
+
+  .veil-moonshroud { width: 46%; top: 30%; }
+  .veil-watcher { width: 14px; height: 4px; }
+}
+
+/* ==========================================================================
+   REDUCED MOTION — same story, no strobe, no shaking
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .veil-stage.is-flashing .vs-flash { animation: veilFlashCalm 1.9s ease 1; }
+
+  @keyframes veilFlashCalm {
+    0%, 100% { opacity: 0; }
+    30% { opacity: 0.34; }
+    60% { opacity: 0.16; }
+  }
+
+  .entrance.is-shaking { animation: none; }
+
+  .vs-grain,
+  .vs-scan { display: none; }
+
+  .veil-glow.is-lit,
+  .veil-bloom.is-lit,
+  .veil-small-line.is-lit,
+  .veil-wraith,
+  .veil-watcher,
+  .vs-eye,
+  .vs-mist,
+  .vs-tree,
+  .vs-marcher {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .vs-eye, .veil-watcher { opacity: 0.85; }
+  .veil-wraith { opacity: var(--wraith-opacity); translate: -50% 0; }
+  .vs-marcher { display: none; }
+
+  .veil-stage[data-movement="fracture"] .vs-eyes,
+  .veil-stage[data-movement="swarm"] .vs-eyes,
+  .veil-stage[data-movement="veil"] .vs-eyes {
+    translate: 0 0;
+    scale: 1;
+  }
+}

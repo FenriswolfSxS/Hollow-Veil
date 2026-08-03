@@ -1,8 +1,0 @@
-Hollow Veil roster icon fix
-
-- The Lodestone parser remains responsible for determining the member's current job and level.
-- Once a job name is known, the roster now displays the exact matching icon from public/job-icons.
-- The Lodestone icon URL is no longer displayed when the job name has already been resolved.
-- All 42 local icon files were SHA-256 checked against the original files in Job Icons.zip: PASS (42/42).
-- Example: Reaper always displays /job-icons/reaper.png from the supplied icon archive.
-- No theme or layout styling was changed.

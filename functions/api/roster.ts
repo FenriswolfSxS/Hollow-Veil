@@ -1,4 +1,4 @@
-import { json, type Env } from '../_shared';
+import { ensureCoreSchema, json, mirrorRosterMembers, type Env } from '../_shared';
 
 type Member={
   id:string;name:string;rank:string;portrait:string;profileUrl:string;world?:string;
@@ -10,8 +10,17 @@ const BASE='https://na.finalfantasyxiv.com';
 const FC_ID='9232379236109663864';
 const MAX_PAGES=20;
 const CACHE_TTL=30*60*1000;
-const SCHEMA_VERSION=6;
+const SCHEMA_VERSION=7;
 const PROFILE_CONCURRENCY=5;
+
+
+// Exact active-job banner filenames from Lodestone character profile pages.
+// Source element: img.character__classjob inside .character__content.selected.
+// These are authoritative and deliberately take priority over small roster/class-list icons.
+const JOB_BANNER_BY_ASSET:Record<string,string>={
+  'yfd0q_vnu7zuzm51drtb73z2jw.png':'Viper',
+  'zeiwu3sovziobm2rzsg8lnhyey.png':'Reaper',
+};
 
 const FC_RANKS=['Warden','Veilkeeper','Watcher','Echo','Keeper','Wanderer','Slumber'] as const;
 
@@ -181,12 +190,21 @@ function classJobIconMap(html:string){
 
 function parseActiveProfile(html:string){
   const contentStart=html.search(/class=["'][^"']*character__content\s+selected/i);
-  const region=contentStart>=0?html.slice(contentStart,contentStart+12000):html;
+  const region=contentStart>=0?html.slice(contentStart,contentStart+16000):html;
   const level=Number(decode(region).match(/\bLV\s*(100|[1-9]?\d)\b/i)?.[1]||0)||undefined;
   const images=imageTags(region);
-  const active=images.find(image=>Number(getAttr(image.tag,'width'))===24&&Number(getAttr(image.tag,'height'))===24)
-    ||images.find(image=>/character__class_icon|classjob/i.test(getAttr(image.tag,'class'))&& !/character__classjob$/i.test(getAttr(image.tag,'class')));
-  return {level,jobIcon:active?.src||''};
+
+  // Authoritative current-job source on Lodestone character pages:
+  // <img class="character__classjob" width="266" height="28" ...>
+  const banner=images.find(image=>/^(?:.*\s)?character__classjob(?:\s.*)?$/i.test(getAttr(image.tag,'class')))
+    ||images.find(image=>Number(getAttr(image.tag,'width'))===266&&Number(getAttr(image.tag,'height'))===28);
+  const bannerAsset=banner?assetKey(banner.src):'';
+  const bannerJob=bannerAsset?JOB_BANNER_BY_ASSET[bannerAsset]:undefined;
+
+  // Keep a small-icon fallback only for profiles whose banner hash is not mapped yet.
+  const smallIcon=images.find(image=>Number(getAttr(image.tag,'width'))===24&&Number(getAttr(image.tag,'height'))===24)
+    ||images.find(image=>/character__class_icon/i.test(getAttr(image.tag,'class')));
+  return {level,job:bannerJob,jobBanner:banner?.src||'',jobIcon:smallIcon?.src||''};
 }
 
 async function fetchPage(url:string){
@@ -204,20 +222,22 @@ async function fetchPage(url:string){
 
 async function enrichMember(member:Member):Promise<Member>{
   try{
-    // The class/job page contains textual names beside every class/job icon. Matching the active
-    // roster icon against that page is reliable and avoids guessing from an image hash.
-    const classJobHtml=await fetchPage(`${member.profileUrl}class_job/`);
-    const map=classJobIconMap(classJobHtml);
-    let job=member.jobIcon?map.get(assetKey(member.jobIcon)):undefined;
     let level=member.level;
     let jobIcon=member.jobIcon;
+    let job:string|undefined;
 
+    // Read the exact active-job banner from the character profile first. This is the source of truth.
+    const profileHtml=await fetchPage(member.profileUrl);
+    const active=parseActiveProfile(profileHtml);
+    if(active.level)level=active.level;
+    if(active.job)job=active.job;
+
+    // Use the class/job page only as a fallback for banner hashes that are not in the exact map yet.
     if(!job){
-      // Profile header fallback: reads exactly the 24x24 active icon and LV value shown in the user's HTML.
-      const profileHtml=await fetchPage(member.profileUrl);
-      const active=parseActiveProfile(profileHtml);
-      if(active.level)level=active.level;
+      const classJobHtml=await fetchPage(`${member.profileUrl}class_job/`);
+      const map=classJobIconMap(classJobHtml);
       if(active.jobIcon){jobIcon=active.jobIcon;job=map.get(assetKey(active.jobIcon));}
+      if(!job&&member.jobIcon)job=map.get(assetKey(member.jobIcon));
     }
 
     return {...member,job,jobIcon,level,schemaVersion:SCHEMA_VERSION};
@@ -243,10 +263,11 @@ async function saveCache(env:Env,members:Member[],updatedAt:number){try{await en
 function validCache(saved:Member[]){return saved.length>0&&saved.every(member=>member.schemaVersion===SCHEMA_VERSION&&member.rank&&member.rank!=='Unranked'&&member.jobIcon&&member.level);}
 
 export const onRequestGet:PagesFunction<Env>=async({request,env})=>{
+  await ensureCoreSchema(env);
   const force=new URL(request.url).searchParams.get('refresh')==='1';
   const cached=await readCache(env);const age=cached?Date.now()-cached.updated_at:Infinity;
   if(!force&&cached&&age<CACHE_TTL){
-    try{const saved=JSON.parse(cached.payload) as Member[];if(validCache(saved))return json({members:saved,cached:true,updatedAt:cached.updated_at});}catch{/* refresh */}
+    try{const saved=JSON.parse(cached.payload) as Member[];if(validCache(saved)){await mirrorRosterMembers(env,saved,cached.updated_at);return json({members:saved,cached:true,updatedAt:cached.updated_at});}}catch{/* refresh */}
   }
 
   try{
@@ -258,7 +279,7 @@ export const onRequestGet:PagesFunction<Env>=async({request,env})=>{
 
     const members=await mapWithConcurrency(unique,PROFILE_CONCURRENCY,enrichMember);
     const unresolved=members.filter(member=>!member.job||!member.level||member.rank==='Unranked');
-    const updatedAt=Date.now();await saveCache(env,members,updatedAt);
+    const updatedAt=Date.now();await saveCache(env,members,updatedAt);await mirrorRosterMembers(env,members,updatedAt);
     return json({members,cached:false,updatedAt,pages,warning:unresolved.length?`${unresolved.length} member record${unresolved.length===1?'':'s'} could not be fully resolved from Lodestone.`:undefined});
   }catch(error){
     const warning=error instanceof Error?error.message:'Live roster unavailable';
